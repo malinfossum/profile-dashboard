@@ -58,11 +58,13 @@ def compose(
     languages: list[str],
     generated_at: datetime | None = None,
 ) -> str:
-    """Build the full block (without markers) from prepared data."""
+    """Build the full block (without markers) from prepared data.
+
+    The block contains data only — no section heading. The target README owns
+    its own structure and decides what heading (if any) sits above the markers.
+    """
     when = generated_at or datetime.now(UTC)
     sections = [
-        "### What I'm building",
-        "",
         render_featured_table(featured),
         "",
         render_stats_line(repo_count, languages, when),
