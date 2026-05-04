@@ -1,0 +1,57 @@
+name: Update dashboard
+
+on:
+  schedule:
+    # 06:00 UTC daily — 07:00 Oslo winter / 08:00 Oslo summer
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-dashboard
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout profile-dashboard
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Checkout target profile repo
+        uses: actions/checkout@v4
+        with:
+          repository: malinfossum/malinfossum
+          path: target
+          token: ${{ secrets.PROFILE_README_TOKEN }}
+          persist-credentials: true
+
+      - name: Render dashboard
+        env:
+          PROFILE_README_TOKEN: ${{ secrets.PROFILE_README_TOKEN }}
+        run: |
+          python -m src.main --repo malinfossum/malinfossum --readme-path ./target/README.md
+
+      - name: Commit and push if changed
+        working-directory: target
+        run: |
+          if git diff --quiet README.md; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "chore(dashboard): refresh [skip ci]"
+          git push
