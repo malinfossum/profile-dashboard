@@ -84,13 +84,19 @@ class TestRenderStatsLine:
 
 
 class TestCompose:
-    def test_includes_heading_table_and_stats(self):
+    def test_includes_table_and_stats_only(self):
         when = datetime(2026, 5, 4, tzinfo=UTC)
         out = renderer.compose([_repo()], repo_count=1, languages=["JavaScript"], generated_at=when)
-        assert "### What I'm building" in out
         assert "[todo-list]" in out
         assert "**Stats:**" in out
         assert "2026-05-04 (UTC)" in out
+
+    def test_does_not_include_section_heading(self):
+        # The block is data only; the target README owns its own headings.
+        when = datetime(2026, 5, 4, tzinfo=UTC)
+        out = renderer.compose([_repo()], repo_count=1, languages=["JavaScript"], generated_at=when)
+        assert "###" not in out
+        assert "What I'm building" not in out
 
 
 class TestWrapWithMarkers:
