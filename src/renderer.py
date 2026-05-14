@@ -26,11 +26,12 @@ def _escape_cell(text: str | None) -> str:
 def _format_date(iso_ts: str | None) -> str:
     if not iso_ts:
         return EMPTY_FIELD
-    return iso_ts[:10]  # ISO 8601 → YYYY-MM-DD
+    dt = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
+    return f"{dt.day} {dt.strftime('%b')}"
 
 
 def render_featured_table(featured: list[dict]) -> str:
-    header = "| Project | About | Lang | Updated |\n|---|---|---|---|"
+    header = "| Project | About | Language | Updated |\n|---|---|---|---|"
     if not featured:
         return f"{header}\n| _No featured repos yet_ | | | |"
     rows = []

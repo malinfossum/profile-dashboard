@@ -42,14 +42,14 @@ class TestRenderFeaturedTable:
     def test_empty_list_shows_placeholder(self):
         out = renderer.render_featured_table([])
         assert "_No featured repos yet_" in out
-        assert "| Project | About | Lang | Updated |" in out
+        assert "| Project | About | Language | Updated |" in out
 
     def test_single_repo_row(self):
         out = renderer.render_featured_table([_repo()])
         assert "[todo-list](https://github.com/malinfossum/todo-list)" in out
         assert "Vanilla JS MVC todo app" in out
         assert "JavaScript" in out
-        assert "2026-04-30" in out
+        assert "30 Apr" in out
 
     def test_caps_at_featured_limit(self):
         repos = [_repo(name=f"repo-{i}") for i in range(10)]
