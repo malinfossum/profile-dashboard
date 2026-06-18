@@ -41,7 +41,7 @@ jobs:
         env:
           PROFILE_README_TOKEN: ${{ secrets.PROFILE_README_TOKEN }}
         run: |
-          python -m src.main --repo malinfossum/malinfossum --readme-path ./target/README.md
+          python -m src.main --repo malinfossum/malinfossum --readme-path ./target/README.md --feature-repo wendhq/wend
 
       - name: Commit and push if changed
         working-directory: target

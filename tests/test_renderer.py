@@ -9,6 +9,7 @@ def _repo(**overrides):
         "html_url": "https://github.com/malinfossum/todo-list",
         "description": "Vanilla JS MVC todo app",
         "language": "JavaScript",
+        "stargazers_count": 0,
         "pushed_at": "2026-04-30T12:34:56Z",
     }
     base.update(overrides)
@@ -42,14 +43,15 @@ class TestRenderFeaturedTable:
     def test_empty_list_shows_placeholder(self):
         out = renderer.render_featured_table([])
         assert "_No featured repos yet_" in out
-        assert "| Project | About | Language | Updated |" in out
+        assert out.splitlines()[0] == "| Project | About | Language |"
+        assert "Updated" not in out
 
     def test_single_repo_row(self):
         out = renderer.render_featured_table([_repo()])
         assert "[todo-list](https://github.com/malinfossum/todo-list)" in out
         assert "Vanilla JS MVC todo app" in out
         assert "JavaScript" in out
-        assert "30 Apr" in out
+        assert "30 Apr" not in out  # date column removed
 
     def test_caps_at_featured_limit(self):
         repos = [_repo(name=f"repo-{i}") for i in range(10)]
@@ -59,14 +61,34 @@ class TestRenderFeaturedTable:
     def test_pipe_in_description_does_not_break_table(self):
         repo = _repo(description="before | after")
         out = renderer.render_featured_table([repo])
-        # Real pipes inside cells are escaped, so the row still has 4 cell separators (5 pipes).
+        # Real pipes inside cells are escaped, so the row still has 3 cells (4 unescaped pipes).
         row_line = [line for line in out.splitlines() if "before" in line][0]
-        assert row_line.count("|") - row_line.count("\\|") == 5
+        assert row_line.count("|") - row_line.count("\\|") == 4
 
     def test_null_description_renders_em_dash(self):
         repo = _repo(description=None)
         out = renderer.render_featured_table([repo])
         assert renderer.EMPTY_FIELD in out
+
+    def test_omits_pushed_date(self):
+        out = renderer.render_featured_table([_repo(pushed_at="2026-05-14T09:00:00Z")])
+        assert "14 May" not in out
+
+    def test_shows_stars_inline_when_present(self):
+        out = renderer.render_featured_table(
+            [_repo(name="tidsro", html_url="https://gh/tidsro", stargazers_count=3)]
+        )
+        assert "[tidsro](https://gh/tidsro) ★ 3" in out
+
+    def test_hides_star_marker_when_zero(self):
+        out = renderer.render_featured_table([_repo(stargazers_count=0)])
+        assert "★" not in out
+
+    def test_hides_star_marker_when_missing(self):
+        repo = _repo()
+        del repo["stargazers_count"]
+        out = renderer.render_featured_table([repo])
+        assert "★" not in out
 
 
 class TestRenderStatsLine:

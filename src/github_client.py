@@ -28,5 +28,13 @@ def fetch_user_repos(username: str, token: str) -> list[dict]:
     return response.json()
 
 
+def fetch_repo(full_name: str, token: str) -> dict:
+    """Fetch a single repo by 'owner/name' — lets us feature repos in other orgs."""
+    url = f"{API_ROOT}/repos/{full_name}"
+    response = requests.get(url, headers=_headers(token), timeout=30)
+    response.raise_for_status()
+    return response.json()
+
+
 def filter_featured(repos: list[dict]) -> list[dict]:
     return [r for r in repos if FEATURED_TOPIC in (r.get("topics") or [])]
