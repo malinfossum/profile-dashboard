@@ -95,7 +95,7 @@ class TestRenderStatsLine:
     def test_basic_line(self):
         when = datetime(2026, 5, 4, tzinfo=UTC)
         out = renderer.render_stats_line(24, ["JavaScript", "HTML", "CSS"], when)
-        assert "24 public repos" in out
+        assert "24 original projects" in out
         assert "JavaScript, HTML, CSS" in out
         assert "Last updated 2026-05-04 (UTC)" in out
 
