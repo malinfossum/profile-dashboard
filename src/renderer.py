@@ -49,7 +49,8 @@ def render_stats_line(repo_count: int, languages: list[str], generated_at: datet
     langs = ", ".join(languages) if languages else EMPTY_FIELD
     when = generated_at.strftime("%Y-%m-%d")
     return (
-        f"**Stats:** {repo_count} public repos · Top languages: {langs} · Last updated {when} (UTC)"
+        f"**Stats:** {repo_count} original projects · "
+        f"Top languages: {langs} · Last updated {when} (UTC)"
     )
 
 
