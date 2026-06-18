@@ -28,6 +28,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Print the rendered block to stdout; do not modify any file.",
     )
+    parser.add_argument(
+        "--feature-repo",
+        action="append",
+        metavar="OWNER/NAME",
+        help="Also feature a repo from another owner/org (repeatable), e.g. wendhq/wend.",
+    )
     return parser.parse_args(argv)
 
 
@@ -48,16 +54,19 @@ def main(argv: list[str] | None = None) -> int:
     owner = args.repo.split("/", 1)[0]
     token = _require_token()
 
-    repos = github_client.fetch_user_repos(owner, token)
-    active = stats.filter_active(repos)
-    featured = github_client.filter_featured(active)
-    repo_count = stats.count_repos(active)
-    languages = stats.top_languages(active)
+    own = stats.filter_active(github_client.fetch_user_repos(owner, token))
+    repo_count = stats.count_repos(own)
+    languages = stats.top_languages(own)
+
+    extra = [github_client.fetch_repo(name, token) for name in (args.feature_repo or [])]
+    featured = stats.most_recent_first(stats.dedupe(github_client.filter_featured(own) + extra))
 
     block = renderer.compose(featured, repo_count, languages)
     full_block = renderer.wrap_with_markers(block)
 
     if args.dry_run:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8")
         print(full_block)
         return 0
 
