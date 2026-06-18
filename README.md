@@ -4,7 +4,7 @@ A small Python tool that generates a live dashboard section inside my GitHub pro
 
 ## What it shows
 
-- **Featured projects** — repos I tag with the `featured` topic on GitHub, sorted by last-pushed.
+- **Featured projects** — repos I tag with the `featured` topic, plus any passed via `--feature-repo` (e.g. a collaboration in another org), sorted by last-pushed.
 - **Stats** — total public repos, top 3 languages, last-updated timestamp (UTC).
 
 The output is written between two HTML comment markers in `malinfossum/README.md`. It only commits when the rendered block actually changes, so the profile repo stays quiet.
@@ -69,6 +69,10 @@ python -m src.main --repo malinfossum/malinfossum --dry-run
 
 # Real run against a local README
 python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README.md
+
+# Also feature a repo from another org (repeatable)
+python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README.md \
+  --feature-repo wendhq/wend
 ```
 
 A token is required for both. Set it locally as the env var `PROFILE_README_TOKEN` (do not commit it).

@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 MARKER_START = "<!-- DASHBOARD:START -->"
 MARKER_END = "<!-- DASHBOARD:END -->"
 
-FEATURED_LIMIT = 5
+FEATURED_LIMIT = 6
 EMPTY_FIELD = "—"
 
 
@@ -23,25 +23,25 @@ def _escape_cell(text: str | None) -> str:
     )
 
 
-def _format_date(iso_ts: str | None) -> str:
-    if not iso_ts:
-        return EMPTY_FIELD
-    dt = datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
-    return f"{dt.day} {dt.strftime('%b')}"
+def _project_cell(repo: dict) -> str:
+    name = _escape_cell(repo.get("name"))
+    url = repo.get("html_url", "")
+    cell = f"[{name}]({url})"
+    stars = repo.get("stargazers_count") or 0
+    if stars > 0:
+        cell += f" ★ {stars}"
+    return cell
 
 
 def render_featured_table(featured: list[dict]) -> str:
-    header = "| Project | About | Language | Updated |\n|---|---|---|---|"
+    header = "| Project | About | Language |\n|---|---|---|"
     if not featured:
-        return f"{header}\n| _No featured repos yet_ | | | |"
+        return f"{header}\n| _No featured repos yet_ | | |"
     rows = []
     for repo in featured[:FEATURED_LIMIT]:
-        name = _escape_cell(repo.get("name"))
-        url = repo.get("html_url", "")
         about = _escape_cell(repo.get("description"))
         lang = _escape_cell(repo.get("language"))
-        updated = _format_date(repo.get("pushed_at"))
-        rows.append(f"| [{name}]({url}) | {about} | {lang} | {updated} |")
+        rows.append(f"| {_project_cell(repo)} | {about} | {lang} |")
     return header + "\n" + "\n".join(rows)
 
 

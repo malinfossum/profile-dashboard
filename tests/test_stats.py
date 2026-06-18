@@ -62,3 +62,38 @@ class TestTopLanguages:
 
     def test_empty_repos(self):
         assert stats.top_languages([]) == []
+
+
+class TestMostRecentFirst:
+    def test_sorts_by_pushed_at_descending(self):
+        repos = [
+            _repo(name="old", pushed_at="2026-01-01T00:00:00Z"),
+            _repo(name="new", pushed_at="2026-06-01T00:00:00Z"),
+            _repo(name="mid", pushed_at="2026-03-01T00:00:00Z"),
+        ]
+        assert [r["name"] for r in stats.most_recent_first(repos)] == ["new", "mid", "old"]
+
+    def test_missing_pushed_at_sorts_last(self):
+        repos = [
+            _repo(name="undated", pushed_at=None),
+            _repo(name="dated", pushed_at="2026-01-01T00:00:00Z"),
+        ]
+        assert [r["name"] for r in stats.most_recent_first(repos)] == ["dated", "undated"]
+
+    def test_does_not_mutate_input(self):
+        repos = [
+            _repo(name="a", pushed_at="2026-01-01T00:00:00Z"),
+            _repo(name="b", pushed_at="2026-06-01T00:00:00Z"),
+        ]
+        stats.most_recent_first(repos)
+        assert [r["name"] for r in repos] == ["a", "b"]
+
+
+class TestDedupe:
+    def test_removes_repeated_ids_keeping_first(self):
+        repos = [_repo(name="a", id=1), _repo(name="b", id=2), _repo(name="a-dup", id=1)]
+        assert [r["name"] for r in stats.dedupe(repos)] == ["a", "b"]
+
+    def test_keeps_distinct_ids(self):
+        repos = [_repo(id=1), _repo(id=2), _repo(id=3)]
+        assert len(stats.dedupe(repos)) == 3
