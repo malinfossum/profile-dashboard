@@ -29,7 +29,8 @@ def _project_cell(repo: dict) -> str:
     cell = f"[{name}]({url})"
     stars = repo.get("stargazers_count") or 0
     if stars > 0:
-        cell += f" ★ {stars}"
+        # Non-breaking spaces keep the name and star count on one line in the table cell.
+        cell += f"&nbsp;★&nbsp;{stars}"
     return cell
 
 
