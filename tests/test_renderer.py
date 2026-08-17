@@ -78,7 +78,7 @@ class TestRenderFeaturedTable:
         out = renderer.render_featured_table(
             [_repo(name="tidsro", html_url="https://gh/tidsro", stargazers_count=3)]
         )
-        assert "[tidsro](https://gh/tidsro) ★ 3" in out
+        assert "[tidsro](https://gh/tidsro)&nbsp;★&nbsp;3" in out
 
     def test_hides_star_marker_when_zero(self):
         out = renderer.render_featured_table([_repo(stargazers_count=0)])
