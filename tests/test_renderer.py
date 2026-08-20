@@ -110,6 +110,7 @@ class TestContribRow:
         )
         assert "<strong>For everyone</strong>" in row
         assert "<em>Open source: showing up for the tools we share.</em>" in row
+        assert 'upstream" />\n\n<br/>\n\n<a href=' in row
 
     def test_pr_limit_keeps_lowest_numbers(self):
         many = dict(WINUTIL, prs=[{"number": n, "html_url": f"u{n}"} for n in [9, 5, 7, 1, 3]])

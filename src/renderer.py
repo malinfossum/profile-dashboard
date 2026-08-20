@@ -96,7 +96,8 @@ def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
         f'<img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="36" '
         f'alt="{pr_count} {noun} merged upstream" />'
     )
-    lines = [pill] + [_contrib_repo_line(r) for r in contrib_repos]
+    # The <br/> paragraph gives the pill breathing room above the repo lines.
+    lines = [pill, "<br/>"] + [_contrib_repo_line(r) for r in contrib_repos]
     return f"<tr>\n{_group_cell(chip, title, ethos)}\n{_projects_cell(lines)}\n</tr>"
 
 
