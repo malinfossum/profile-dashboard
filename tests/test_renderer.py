@@ -1,129 +1,171 @@
+"""Renderer tests pin the exact HTML the frozen README v6 design expects."""
+
+from __future__ import annotations
+
 from datetime import UTC, datetime
 
 from src import renderer
 
-
-def _repo(**overrides):
-    base = {
-        "name": "todo-list",
-        "html_url": "https://github.com/malinfossum/todo-list",
-        "description": "Vanilla JS MVC todo app",
-        "language": "JavaScript",
-        "stargazers_count": 0,
-        "pushed_at": "2026-04-30T12:34:56Z",
-    }
-    base.update(overrides)
-    return base
-
-
-class TestEscapeCell:
-    def test_plain_text_unchanged(self):
-        assert renderer._escape_cell("hello world") == "hello world"
-
-    def test_pipe_escaped(self):
-        assert renderer._escape_cell("a | b") == "a \\| b"
-
-    def test_backtick_escaped(self):
-        assert renderer._escape_cell("use `code`") == "use \\`code\\`"
-
-    def test_brackets_escaped(self):
-        assert renderer._escape_cell("[link]") == "\\[link\\]"
-
-    def test_backslash_escaped_first(self):
-        assert renderer._escape_cell("a\\b") == "a\\\\b"
-
-    def test_none_renders_em_dash(self):
-        assert renderer._escape_cell(None) == renderer.EMPTY_FIELD
-
-    def test_empty_renders_em_dash(self):
-        assert renderer._escape_cell("") == renderer.EMPTY_FIELD
+TIDSRO = {
+    "name": "tidsro",
+    "html_url": "https://github.com/malinfossum/tidsro",
+    "stargazers_count": 1,
+    "description": "A calm desktop timer & alarm. Local-first, for Windows.",
+}
+IGNITE = {
+    "name": "ignite",
+    "html_url": "https://github.com/malinfossum/ignite",
+    "stargazers_count": 1,
+    "description": "ADHD-friendly task app. A small flame, kept going.",
+}
+VARDE = {
+    "name": "varde",
+    "html_url": "https://github.com/malinfossum/varde",
+    "stargazers_count": 0,
+    "description": "A bilingual directory of Norwegian social services.",
+}
+WINUTIL = {
+    "full_name": "ChrisTitusTech/winutil",
+    "html_url": "https://github.com/ChrisTitusTech/winutil",
+    "stargazers_count": 60883,
+    "prs": [
+        {"number": 4995, "html_url": "https://github.com/ChrisTitusTech/winutil/pull/4995"},
+        {"number": 4992, "html_url": "https://github.com/ChrisTitusTech/winutil/pull/4992"},
+        {"number": 4993, "html_url": "https://github.com/ChrisTitusTech/winutil/pull/4993"},
+    ],
+}
 
 
-class TestRenderFeaturedTable:
-    def test_empty_list_shows_placeholder(self):
-        out = renderer.render_featured_table([])
-        assert "_No featured repos yet_" in out
-        assert out.splitlines()[0] == "| Project | About | Language |"
-        assert "Updated" not in out
-
-    def test_single_repo_row(self):
-        out = renderer.render_featured_table([_repo()])
-        assert "[todo-list](https://github.com/malinfossum/todo-list)" in out
-        assert "Vanilla JS MVC todo app" in out
-        assert "JavaScript" in out
-        assert "30 Apr" not in out  # date column removed
-
-    def test_caps_at_featured_limit(self):
-        repos = [_repo(name=f"repo-{i}") for i in range(10)]
-        out = renderer.render_featured_table(repos)
-        assert out.count("\n|") == 1 + renderer.FEATURED_LIMIT  # header sep + N rows
-
-    def test_pipe_in_description_does_not_break_table(self):
-        repo = _repo(description="before | after")
-        out = renderer.render_featured_table([repo])
-        # Real pipes inside cells are escaped, so the row still has 3 cells (4 unescaped pipes).
-        row_line = [line for line in out.splitlines() if "before" in line][0]
-        assert row_line.count("|") - row_line.count("\\|") == 4
-
-    def test_null_description_renders_em_dash(self):
-        repo = _repo(description=None)
-        out = renderer.render_featured_table([repo])
-        assert renderer.EMPTY_FIELD in out
-
-    def test_omits_pushed_date(self):
-        out = renderer.render_featured_table([_repo(pushed_at="2026-05-14T09:00:00Z")])
-        assert "14 May" not in out
-
-    def test_shows_stars_inline_when_present(self):
-        out = renderer.render_featured_table(
-            [_repo(name="tidsro", html_url="https://gh/tidsro", stargazers_count=3)]
+class TestShortDescription:
+    def test_first_sentence_lowercased(self):
+        assert (
+            renderer.short_description("A calm desktop timer & alarm. Local-first.")
+            == "a calm desktop timer & alarm."
         )
-        assert "[tidsro](https://gh/tidsro)&nbsp;★&nbsp;3" in out
 
-    def test_hides_star_marker_when_zero(self):
-        out = renderer.render_featured_table([_repo(stargazers_count=0)])
-        assert "★" not in out
+    def test_acronym_opener_keeps_casing(self):
+        assert (
+            renderer.short_description("ADHD-friendly task app. A small flame.")
+            == "ADHD-friendly task app."
+        )
 
-    def test_hides_star_marker_when_missing(self):
-        repo = _repo()
-        del repo["stargazers_count"]
-        out = renderer.render_featured_table([repo])
-        assert "★" not in out
+    def test_single_sentence_gains_period(self):
+        assert renderer.short_description("Job radar for Norway") == "job radar for Norway."
+
+    def test_empty_and_none(self):
+        assert renderer.short_description(None) == ""
+        assert renderer.short_description("") == ""
 
 
-class TestRenderStatsLine:
-    def test_basic_line(self):
-        when = datetime(2026, 5, 4, tzinfo=UTC)
-        out = renderer.render_stats_line(24, ["JavaScript", "HTML", "CSS"], when)
-        assert "24 original projects" in out
-        assert "JavaScript, HTML, CSS" in out
-        assert "Last updated 2026-05-04 (UTC)" in out
+class TestFormatStars:
+    def test_below_thousand_verbatim(self):
+        assert renderer.format_stars(999) == "999"
 
-    def test_empty_languages_renders_em_dash(self):
-        when = datetime(2026, 5, 4, tzinfo=UTC)
-        out = renderer.render_stats_line(0, [], when)
-        assert renderer.EMPTY_FIELD in out
+    def test_thousands_one_decimal(self):
+        assert renderer.format_stars(60883) == "60.9k"
+
+    def test_trailing_zero_stripped(self):
+        assert renderer.format_stars(60000) == "60k"
+
+
+class TestGroupRow:
+    def test_exact_row_html(self):
+        row = renderer.render_group_row("focus", [TIDSRO, IGNITE])
+        expected = (
+            "<tr>\n"
+            '<td valign="middle" width="30%">\n\n'
+            '<img src="assets/chip-gold.svg" width="14" height="14" alt="" /> '
+            "<strong>For focus</strong>\n\n"
+            "<em>Calm tools, built for brains like mine.</em>\n\n"
+            "</td>\n"
+            '<td valign="top" width="70%">\n\n'
+            '<a href="https://github.com/malinfossum/tidsro"><strong>tidsro</strong></a>'
+            " ★ 1: a calm desktop timer &amp; alarm.\n\n"
+            '<a href="https://github.com/malinfossum/ignite"><strong>ignite</strong></a>'
+            " ★ 1: ADHD-friendly task app.\n\n"
+            "</td>\n"
+            "</tr>"
+        )
+        assert row == expected
+
+    def test_zero_stars_omits_star_part(self):
+        row = renderer.render_group_row("wellbeing", [VARDE])
+        assert "varde</strong></a>: a bilingual" in row
+        assert "★ 0" not in row
+
+
+class TestContribRow:
+    def test_pill_and_ascending_pr_links(self):
+        row = renderer.render_contrib_row([WINUTIL], 3)
+        assert (
+            '<img src="assets/oss-merged.svg" width="250" height="36" '
+            'alt="3 pull requests merged upstream" />' in row
+        )
+        assert (
+            '<a href="https://github.com/ChrisTitusTech/winutil">'
+            "<strong>ChrisTitusTech/winutil</strong></a> ★ 60.9k: "
+            '<a href="https://github.com/ChrisTitusTech/winutil/pull/4992">#4992</a> · '
+            '<a href="https://github.com/ChrisTitusTech/winutil/pull/4993">#4993</a> · '
+            '<a href="https://github.com/ChrisTitusTech/winutil/pull/4995">#4995</a>' in row
+        )
+        assert "<strong>For everyone</strong>" in row
+        assert "<em>Open source: showing up for the tools we share.</em>" in row
+
+    def test_pr_limit_keeps_lowest_numbers(self):
+        many = dict(WINUTIL, prs=[{"number": n, "html_url": f"u{n}"} for n in [9, 5, 7, 1, 3]])
+        row = renderer.render_contrib_row([many], 5)
+        assert "#1" in row
+        assert "#7" in row
+        assert "#9" not in row
+
+
+class TestStatsLine:
+    def test_exact_line(self):
+        line = renderer.render_stats_line(
+            13, ["C#", "JavaScript", "CSS"], datetime(2026, 8, 20, tzinfo=UTC)
+        )
+        expected = (
+            '<p align="center"><code>13 original projects</code> '
+            '<img src="assets/dot-gold.svg" width="10" height="10" alt="·" /> '
+            "<code>C#</code> <code>JavaScript</code> <code>CSS</code> "
+            '<img src="assets/dot-gold.svg" width="10" height="10" alt="·" /> '
+            "<code>updated 2026-08-20</code></p>"
+        )
+        assert line == expected
+
+
+class TestOssPill:
+    def test_plural_label_and_alt(self):
+        svg = renderer.render_oss_pill_svg(3)
+        assert 'aria-label="3 pull requests merged upstream"' in svg
+        assert ">3 PRs MERGED UPSTREAM<" in svg
+
+    def test_singular(self):
+        svg = renderer.render_oss_pill_svg(1)
+        assert 'aria-label="1 pull request merged upstream"' in svg
+        assert ">1 PR MERGED UPSTREAM<" in svg
 
 
 class TestCompose:
-    def test_includes_table_and_stats_only(self):
-        when = datetime(2026, 5, 4, tzinfo=UTC)
-        out = renderer.compose([_repo()], repo_count=1, languages=["JavaScript"], generated_at=when)
-        assert "[todo-list]" in out
-        assert "**Stats:**" in out
-        assert "2026-05-04 (UTC)" in out
+    def test_structure_and_marker_wrap(self):
+        block = renderer.compose(
+            [("focus", [TIDSRO, IGNITE])],
+            [WINUTIL],
+            3,
+            13,
+            ["C#", "JavaScript", "CSS"],
+            datetime(2026, 8, 20, tzinfo=UTC),
+        )
+        assert block.startswith('<table align="center">\n<tr>\n')
+        assert block.count("<tr>") == 2
+        assert block.rstrip().endswith("</p>")
+        wrapped = renderer.wrap_with_markers(block)
+        assert wrapped.startswith(renderer.MARKER_START + "\n")
+        assert wrapped.endswith("\n" + renderer.MARKER_END)
 
-    def test_does_not_include_section_heading(self):
-        # The block is data only; the target README owns its own headings.
-        when = datetime(2026, 5, 4, tzinfo=UTC)
-        out = renderer.compose([_repo()], repo_count=1, languages=["JavaScript"], generated_at=when)
-        assert "###" not in out
-        assert "What I'm building" not in out
-
-
-class TestWrapWithMarkers:
-    def test_wraps_block(self):
-        out = renderer.wrap_with_markers("body")
-        assert out.startswith(renderer.MARKER_START)
-        assert out.endswith(renderer.MARKER_END)
-        assert "body" in out
+    def test_no_contributions_omits_contrib_row(self):
+        block = renderer.compose(
+            [("focus", [TIDSRO])], [], 0, 13, ["C#"], datetime(2026, 8, 20, tzinfo=UTC)
+        )
+        assert "For everyone" not in block
+        assert "oss-merged" not in block

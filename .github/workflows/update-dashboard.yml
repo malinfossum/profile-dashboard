@@ -41,17 +41,17 @@ jobs:
         env:
           PROFILE_README_TOKEN: ${{ secrets.PROFILE_README_TOKEN }}
         run: |
-          python -m src.main --repo malinfossum/malinfossum --readme-path ./target/README.md --feature-repo wendhq/wend
+          python -m src.main --repo malinfossum/malinfossum             --readme-path ./target/README.md             --pill-path ./target/assets/oss-merged.svg             --feature-repo wendhq/wend             --exclude-owner wendhq --exclude-owner funn-team             --group focus=tidsro,ignite             --group wellbeing=varde,kenaz             --group momentum=wend,hugin
 
       - name: Commit and push if changed
         working-directory: target
         run: |
-          if git diff --quiet README.md; then
+          if git diff --quiet README.md assets/oss-merged.svg; then
             echo "No changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md
+          git add README.md assets/oss-merged.svg
           git commit -m "chore(dashboard): refresh [skip ci]"
           git push

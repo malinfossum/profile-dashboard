@@ -97,3 +97,50 @@ class TestDedupe:
     def test_keeps_distinct_ids(self):
         repos = [_repo(id=1), _repo(id=2), _repo(id=3)]
         assert len(stats.dedupe(repos)) == 3
+
+
+class TestGroupFeatured:
+    def _repos(self):
+        return [
+            {"id": 1, "name": "tidsro", "full_name": "malinfossum/tidsro"},
+            {"id": 2, "name": "ignite", "full_name": "malinfossum/ignite"},
+            {"id": 3, "name": "wend", "full_name": "wendhq/wend"},
+        ]
+
+    def test_groups_follow_spec_order(self):
+        from src.stats import group_featured
+
+        grouped, leftovers = group_featured(
+            self._repos(), [("focus", ["tidsro", "ignite"]), ("momentum", ["wendhq/wend"])]
+        )
+        assert [(k, [r["name"] for r in rs]) for k, rs in grouped] == [
+            ("focus", ["tidsro", "ignite"]),
+            ("momentum", ["wend"]),
+        ]
+        assert leftovers == []
+
+    def test_unclaimed_repos_are_leftovers(self):
+        from src.stats import group_featured
+
+        grouped, leftovers = group_featured(self._repos(), [("focus", ["tidsro"])])
+        assert [r["name"] for r in leftovers] == ["ignite", "wend"]
+
+    def test_unknown_name_is_ignored(self):
+        from src.stats import group_featured
+
+        grouped, _ = group_featured(self._repos(), [("focus", ["nope", "tidsro"])])
+        assert [r["name"] for r in grouped[0][1]] == ["tidsro"]
+
+
+class TestGroupPrsByRepo:
+    def test_groups_by_repository_url(self):
+        from src.stats import group_prs_by_repo
+
+        items = [
+            {"number": 1, "repository_url": "https://api.github.com/repos/a/x"},
+            {"number": 2, "repository_url": "https://api.github.com/repos/b/y"},
+            {"number": 3, "repository_url": "https://api.github.com/repos/a/x"},
+        ]
+        grouped = group_prs_by_repo(items)
+        assert sorted(grouped) == ["a/x", "b/y"]
+        assert [p["number"] for p in grouped["a/x"]] == [1, 3]
