@@ -32,3 +32,12 @@ def write_block(readme_path: Path, full_block_with_markers: str, dry_run: bool =
     if not dry_run:
         readme_path.write_text(new_content, encoding="utf-8")
     return True
+
+
+def write_text_file(path: Path, content: str, dry_run: bool = False) -> bool:
+    """Write a text file only when the content differs. Returns True if changed."""
+    if path.exists() and path.read_text(encoding="utf-8") == content:
+        return False
+    if not dry_run:
+        path.write_text(content, encoding="utf-8", newline="\n")
+    return True

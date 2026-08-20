@@ -38,3 +38,14 @@ def fetch_repo(full_name: str, token: str) -> dict:
 
 def filter_featured(repos: list[dict]) -> list[dict]:
     return [r for r in repos if FEATURED_TOPIC in (r.get("topics") or [])]
+
+
+def fetch_merged_upstream_prs(username: str, token: str, exclude_owners: list[str]) -> list[dict]:
+    """Merged PRs authored by the user in repos owned by others."""
+    owners = {username, *exclude_owners}
+    q = f"is:pr is:merged author:{username} " + " ".join(f"-user:{o}" for o in sorted(owners))
+    url = f"{API_ROOT}/search/issues"
+    params = {"q": q, "per_page": PAGE_SIZE, "sort": "created", "order": "asc"}
+    response = requests.get(url, headers=_headers(token), params=params, timeout=30)
+    response.raise_for_status()
+    return response.json().get("items", [])

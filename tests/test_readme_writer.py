@@ -68,3 +68,26 @@ def test_only_one_marker_raises(tmp_path):
 
     with pytest.raises(MarkersMissingError):
         write_block(readme, "<!-- DASHBOARD:START -->\nx\n<!-- DASHBOARD:END -->")
+
+
+class TestWriteTextFile:
+    def test_writes_new_file(self, tmp_path):
+        from src.readme_writer import write_text_file
+
+        target = tmp_path / "pill.svg"
+        assert write_text_file(target, "<svg/>") is True
+        assert target.read_text(encoding="utf-8") == "<svg/>"
+
+    def test_idempotent_when_unchanged(self, tmp_path):
+        from src.readme_writer import write_text_file
+
+        target = tmp_path / "pill.svg"
+        target.write_text("<svg/>", encoding="utf-8")
+        assert write_text_file(target, "<svg/>") is False
+
+    def test_dry_run_does_not_write(self, tmp_path):
+        from src.readme_writer import write_text_file
+
+        target = tmp_path / "pill.svg"
+        assert write_text_file(target, "<svg/>", dry_run=True) is True
+        assert not target.exists()
