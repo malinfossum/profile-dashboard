@@ -5,7 +5,10 @@ A small Python tool that generates a live dashboard section inside my GitHub pro
 ## What it shows
 
 - **Featured projects** — repos I tag with the `featured` topic, plus any passed via `--feature-repo` (e.g. a collaboration in another org), sorted by last-pushed.
-- **Stats** — total public repos, top 3 languages, last-updated timestamp (UTC).
+- **Stats** — count of original projects (forks and archived repos excluded), top languages by
+  bytes written across all repos, and the last-updated date (UTC).
+- **Upstream contributions** — merged PRs authored in repos owned by others, grouped by repo,
+  with a generated count pill (`--pill-path`).
 
 The output is written between two HTML comment markers in `malinfossum/README.md`. It only commits when the rendered block actually changes, so the profile repo stays quiet.
 
@@ -24,7 +27,7 @@ Five files, each with one job:
 | File | Responsibility |
 |---|---|
 | `src/github_client.py` | Talks to the GitHub API. Returns plain dicts. |
-| `src/stats.py` | Pure aggregation. Counts repos, picks top 3 languages. Filters forks and archived repos. |
+| `src/stats.py` | Pure aggregation. Counts repos, sums language bytes and ranks them, groups featured repos. Filters forks and archived repos. |
 | `src/renderer.py` | Composes Markdown sections. Escapes user-supplied strings. |
 | `src/readme_writer.py` | Replaces content between markers in the target README. Idempotent. |
 | `src/main.py` | Top-down orchestrator. Wires everything together. |
@@ -37,7 +40,7 @@ The discipline that keeps it maintainable: **the renderer never calls the API, a
    - Resource owner: your account
    - Repository access: *Only select repositories* → pick `malinfossum/malinfossum`
    - Permissions: *Repository permissions* → *Contents* → *Read and write*. Nothing else.
-   - Expiration: 90 days
+   - Expiration: 1 year (small blast radius, less rotation churn)
 2. **Add the token as a repo secret** in `profile-dashboard`:
    - Repo → Settings → Secrets and variables → Actions → New repository secret
    - Name: `PROFILE_README_TOKEN`
@@ -48,7 +51,7 @@ The discipline that keeps it maintainable: **the renderer never calls the API, a
    ```
 4. **Tag at least one repo** with the `featured` topic on GitHub (Repo page → About gear → Topics).
 5. **Trigger the workflow manually** once: Actions → *Update dashboard* → *Run workflow*.
-6. **Set a calendar reminder ~80 days out** to rotate the token before it expires.
+6. **Set a calendar reminder ~1 month before expiry** to rotate the token.
 
 ## Local development
 
@@ -75,6 +78,12 @@ python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README
   --feature-repo wendhq/wend
 ```
 
+Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group,
+`--exclude-owner OWNER` keeps an org's repos out of the upstream-contributions count,
+`--exclude-language LANGUAGE` keeps a language out of the stats pills, and
+`--language-count N` sets how many pills to show (default 3). All are repeatable
+except `--language-count`.
+
 A token is required for both. Set it locally as the env var `PROFILE_README_TOKEN` (do not commit it).
 
 ### Tests and lint
@@ -94,4 +103,4 @@ pytest
 
 ## License
 
-MIT
+Apache 2.0 — see [LICENSE](LICENSE).

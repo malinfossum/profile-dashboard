@@ -51,7 +51,7 @@ The script computes the full block in memory, then asks the writer to replace be
 
 ## Action version pinning
 
-Workflows use floating major tags (`actions/checkout@v4`) and rely on **Dependabot** for the `github-actions` ecosystem to propose updates as PRs. This is simpler to maintain than hard-pinned SHAs and keeps the project current. If a stricter posture is wanted later, replace tags with full commit SHAs and let Dependabot manage them — same workflow, same Dependabot config.
+Workflows use floating major tags (`actions/checkout@v6`) and rely on **Dependabot** for the `github-actions` ecosystem to propose updates as PRs. This is simpler to maintain than hard-pinned SHAs and keeps the project current. If a stricter posture is wanted later, replace tags with full commit SHAs and let Dependabot manage them — same workflow, same Dependabot config.
 
 ## Known limits
 
