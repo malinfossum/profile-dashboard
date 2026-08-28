@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout profile-dashboard
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -32,7 +32,7 @@ jobs:
         run: pip install -e .
 
       - name: Checkout target profile repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: malinfossum/malinfossum
           path: target
