@@ -2,8 +2,10 @@ name: Update dashboard
 
 on:
   schedule:
-    # 06:00 UTC daily — 07:00 Oslo winter / 08:00 Oslo summer
-    - cron: "0 6 * * *"
+    # Off-peak minutes: GitHub delays on-the-hour cron heavily (median 2h41m on "0 6").
+    # 02:23 UTC aims to land before the Oslo morning; 14:47 UTC backstops a late/dropped run.
+    - cron: "23 2 * * *"
+    - cron: "47 14 * * *"
   workflow_dispatch:
 
 permissions:
