@@ -49,6 +49,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "(repeatable), e.g. wendhq. The profile owner is always excluded.",
     )
     parser.add_argument(
+        "--exclude-language",
+        action="append",
+        metavar="LANGUAGE",
+        help="Language that never earns a pill in the stats line (repeatable, "
+        "case-insensitive), e.g. Python.",
+    )
+    parser.add_argument(
         "--pill-path",
         type=Path,
         help="Path to write the merged-PRs pill SVG (assets/oss-merged.svg in the "
@@ -88,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
 
     own = stats.filter_active(github_client.fetch_user_repos(owner, token))
     repo_count = stats.count_repos(own)
-    languages = stats.top_languages(own)
+    languages = stats.top_languages(own, exclude=args.exclude_language or [])
 
     extra = [github_client.fetch_repo(name, token) for name in (args.feature_repo or [])]
     featured = stats.most_recent_first(stats.dedupe(github_client.filter_featured(own) + extra))

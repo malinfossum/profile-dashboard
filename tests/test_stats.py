@@ -60,6 +60,23 @@ class TestTopLanguages:
         ]
         assert len(stats.top_languages(repos, n=2)) == 2
 
+    def test_breaks_count_ties_alphabetically(self):
+        """Equal counts must not depend on API order, or the pill flip-flops daily."""
+        repos = [_repo(language="Python"), _repo(language="CSS"), _repo(language="HTML")]
+        assert stats.top_languages(repos) == ["CSS", "HTML", "Python"]
+
+    def test_excludes_named_languages(self):
+        repos = [
+            _repo(language="C#"),
+            _repo(language="Python"),
+            _repo(language="CSS"),
+        ]
+        assert stats.top_languages(repos, exclude=["Python"]) == ["C#", "CSS"]
+
+    def test_exclusion_ignores_case(self):
+        repos = [_repo(language="Python"), _repo(language="CSS")]
+        assert stats.top_languages(repos, exclude=["python"]) == ["CSS"]
+
     def test_empty_repos(self):
         assert stats.top_languages([]) == []
 
