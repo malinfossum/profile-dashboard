@@ -53,7 +53,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="append",
         metavar="LANGUAGE",
         help="Language that never earns a pill in the stats line (repeatable, "
-        "case-insensitive), e.g. Python.",
+        "case-insensitive), e.g. CSS.",
+    )
+    parser.add_argument(
+        "--language-count",
+        type=int,
+        default=3,
+        metavar="N",
+        help="How many language pills to show in the stats line (default 3).",
     )
     parser.add_argument(
         "--pill-path",
@@ -95,7 +102,11 @@ def main(argv: list[str] | None = None) -> int:
 
     own = stats.filter_active(github_client.fetch_user_repos(owner, token))
     repo_count = stats.count_repos(own)
-    languages = stats.top_languages(own, exclude=args.exclude_language or [])
+    breakdowns = [github_client.fetch_repo_languages(r["full_name"], token) for r in own]
+    languages = stats.top_languages(
+        stats.total_language_bytes(breakdowns, exclude=args.exclude_language or []),
+        n=args.language_count,
+    )
 
     extra = [github_client.fetch_repo(name, token) for name in (args.feature_repo or [])]
     featured = stats.most_recent_first(stats.dedupe(github_client.filter_featured(own) + extra))

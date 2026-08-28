@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import sys
+
 import requests
 
 API_ROOT = "https://api.github.com"
@@ -34,6 +36,22 @@ def fetch_repo(full_name: str, token: str) -> dict:
     response = requests.get(url, headers=_headers(token), timeout=30)
     response.raise_for_status()
     return response.json()
+
+
+def fetch_repo_languages(full_name: str, token: str) -> dict[str, int]:
+    """Byte count per language for one repo, default branch only.
+
+    A repo that fails to fetch returns {} rather than raising: one unreachable
+    repo skews the totals slightly, but a crashed run leaves the profile stale.
+    """
+    url = f"{API_ROOT}/repos/{full_name}/languages"
+    try:
+        response = requests.get(url, headers=_headers(token), timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as exc:
+        print(f"warning: could not fetch languages for {full_name}: {exc}", file=sys.stderr)
+        return {}
 
 
 def filter_featured(repos: list[dict]) -> list[dict]:

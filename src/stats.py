@@ -13,19 +13,26 @@ def count_repos(repos: list[dict]) -> int:
     return len(repos)
 
 
-def top_languages(
-    repos: list[dict], n: int = 3, exclude: list[str] | None = None
-) -> list[str]:
-    """Top n primary languages by repo count.
+def total_language_bytes(
+    breakdowns: list[dict[str, int]], exclude: list[str] | None = None
+) -> Counter:
+    """Sum per-repo {language: bytes} maps into one counter."""
+    skip = {lang.casefold() for lang in exclude or []}
+    totals: Counter = Counter()
+    for breakdown in breakdowns:
+        for lang, byte_count in breakdown.items():
+            if lang.casefold() not in skip:
+                totals[lang] += byte_count
+    return totals
+
+
+def top_languages(byte_counts: Counter, n: int = 3) -> list[str]:
+    """Top n languages by total bytes.
 
     Ties break alphabetically so the pill is stable between runs — Counter alone
-    falls back to insertion order, which follows the API's repo ordering.
+    falls back to insertion order, which follows whatever order the API replied in.
     """
-    skip = {lang.casefold() for lang in exclude or []}
-    counter = Counter(
-        r["language"] for r in repos if r.get("language") and r["language"].casefold() not in skip
-    )
-    ranked = sorted(counter.items(), key=lambda item: (-item[1], item[0]))
+    ranked = sorted(byte_counts.items(), key=lambda item: (-item[1], item[0]))
     return [lang for lang, _ in ranked[:n]]
 
 

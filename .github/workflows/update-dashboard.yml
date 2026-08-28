@@ -43,7 +43,7 @@ jobs:
         env:
           PROFILE_README_TOKEN: ${{ secrets.PROFILE_README_TOKEN }}
         run: |
-          python -m src.main --repo malinfossum/malinfossum             --readme-path ./target/README.md             --pill-path ./target/assets/oss-merged.svg             --feature-repo wendhq/wend             --exclude-owner wendhq --exclude-owner funn-team --exclude-language Python             --group focus=tidsro,ignite             --group wellbeing=varde,kenaz             --group momentum=wend,hugin,munin
+          python -m src.main --repo malinfossum/malinfossum             --readme-path ./target/README.md             --pill-path ./target/assets/oss-merged.svg             --feature-repo wendhq/wend             --exclude-owner wendhq --exclude-owner funn-team --exclude-language Python --exclude-language CSS --exclude-language HTML             --group focus=tidsro,ignite             --group wellbeing=varde,kenaz             --group momentum=wend,hugin,munin
 
       - name: Commit and push if changed
         working-directory: target
