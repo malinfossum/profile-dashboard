@@ -80,18 +80,22 @@ class TestGroupRow:
             "</td>\n"
             '<td valign="top" width="70%">\n\n'
             '<a href="https://github.com/malinfossum/tidsro"><strong>tidsro</strong></a>'
-            " ★ 1: a calm desktop timer &amp; alarm.\n\n"
+            "&ensp;&nbsp;"
+            '<img src="assets/stars-1.svg" width="33" height="26" align="middle" alt="1 star" />'
+            "&ensp;&nbsp;a calm desktop timer &amp; alarm.\n\n"
             '<a href="https://github.com/malinfossum/ignite"><strong>ignite</strong></a>'
-            " ★ 1: ADHD-friendly task app.\n\n"
+            "&ensp;&nbsp;"
+            '<img src="assets/stars-1.svg" width="33" height="26" align="middle" alt="1 star" />'
+            "&ensp;&nbsp;ADHD-friendly task app.\n\n"
             "</td>\n"
             "</tr>"
         )
         assert row == expected
 
-    def test_zero_stars_omits_star_part(self):
+    def test_zero_stars_omits_badge(self):
         row = renderer.render_group_row("wellbeing", [VARDE])
-        assert "varde</strong></a>: a bilingual" in row
-        assert "★ 0" not in row
+        assert "varde</strong></a>&ensp;&nbsp;a bilingual" in row
+        assert "stars-0.svg" not in row
 
 
 class TestContribRow:
@@ -103,7 +107,9 @@ class TestContribRow:
         )
         assert (
             '<a href="https://github.com/ChrisTitusTech/winutil">'
-            "<strong>ChrisTitusTech/winutil</strong></a> ★ 60.9k: "
+            "<strong>ChrisTitusTech/winutil</strong></a>&ensp;&nbsp;"
+            '<img src="assets/stars-60.9k.svg" width="54" height="26" '
+            'align="middle" alt="60.9k stars" />&ensp;&nbsp;'
             '<a href="https://github.com/ChrisTitusTech/winutil/pull/4992">#4992</a> · '
             '<a href="https://github.com/ChrisTitusTech/winutil/pull/4993">#4993</a> · '
             '<a href="https://github.com/ChrisTitusTech/winutil/pull/4995">#4995</a>' in row
@@ -145,6 +151,49 @@ class TestOssPill:
         svg = renderer.render_oss_pill_svg(1)
         assert 'aria-label="1 pull request merged upstream"' in svg
         assert ">1 PR MERGED UPSTREAM<" in svg
+
+
+class TestStarBadge:
+    def test_asset_name_shares_a_file_per_count(self):
+        assert renderer.star_asset_name(1) == "stars-1.svg"
+        assert renderer.star_asset_name(60883) == "stars-60.9k.svg"
+
+    def test_svg_carries_label_and_accessible_name(self):
+        svg = renderer.render_star_badge_svg(60883)
+        assert 'aria-label="60.9k stars"' in svg
+        assert ">60.9k</text>" in svg
+        assert "#c9a96e" in svg
+
+    def test_singular_star(self):
+        assert 'aria-label="1 star"' in renderer.render_star_badge_svg(1)
+
+    def test_width_matches_the_img_tag(self):
+        svg = renderer.render_star_badge_svg(60883)
+        assert f'width="{renderer.star_badge_width("60.9k")}"' in svg
+        assert renderer.star_badge_width("60.9k") == 54
+        assert renderer.star_badge_width("1") == 33
+
+    def test_transparent_padding_lifts_the_capsule(self):
+        # align="middle" centres the image on the baseline, so the capsule is
+        # lifted by half the padding. Losing this silently drops it 4px.
+        assert renderer.STAR_BADGE_HEIGHT == renderer.STAR_CAPSULE_HEIGHT + 8
+        svg = renderer.render_star_badge_svg(1)
+        assert 'viewBox="0 0 33 26"' in svg
+        assert 'height="17"' in svg  # capsule rect, inset by the 0.5 stroke
+        assert '<img src="assets/stars-1.svg" width="33" height="26" align="middle"' in (
+            renderer._star_badge_img(1)
+        )
+
+    def test_no_separator_glyph(self):
+        row = renderer.render_group_row("focus", [TIDSRO])
+        assert renderer.GAP in row
+        for dash in ("\u2014", "\u2013", ":"):
+            assert f"</a>{dash}" not in row and f"/>{dash}" not in row
+
+    def test_no_third_party_host(self):
+        row = renderer.render_group_row("focus", [TIDSRO])
+        assert "shields.io" not in row
+        assert 'src="assets/' in row
 
 
 class TestCompose:

@@ -63,6 +63,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="How many language pills to show in the stats line (default 3).",
     )
     parser.add_argument(
+        "--assets-dir",
+        type=Path,
+        help="Directory to write the star badge SVGs into (assets/ in the target "
+        "repo checkout). Skipped when omitted.",
+    )
+    parser.add_argument(
         "--pill-path",
         type=Path,
         help="Path to write the merged-PRs pill SVG (assets/oss-merged.svg in the "
@@ -89,6 +95,24 @@ def _require_token() -> str:
         print("error: PROFILE_README_TOKEN env var is not set.", file=sys.stderr)
         sys.exit(2)
     return token
+
+
+def _write_star_badges(assets_dir: Path, star_counts: set[int]) -> bool:
+    """Write one badge per distinct count and delete the ones no repo uses now.
+
+    Pruning is scoped to the `stars-*.svg` names this tool owns, so a stale
+    badge cannot linger in the profile repo after a count changes.
+    """
+    wanted = {renderer.star_asset_name(count): count for count in star_counts}
+    changed = False
+    for name, count in wanted.items():
+        svg = renderer.render_star_badge_svg(count)
+        changed = write_text_file(assets_dir / name, svg) or changed
+    for path in assets_dir.glob("stars-*.svg"):
+        if path.name not in wanted:
+            path.unlink()
+            changed = True
+    return changed
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -132,6 +156,10 @@ def main(argv: list[str] | None = None) -> int:
     contrib_repos.sort(key=lambda r: r["stargazers_count"], reverse=True)
     pr_count = len(pr_items)
 
+    star_counts = {r.get("stargazers_count") or 0 for _, repos in grouped for r in repos}
+    star_counts |= {r["stargazers_count"] for r in contrib_repos}
+    star_counts = {c for c in star_counts if c > 0}
+
     block = renderer.compose(grouped, contrib_repos, pr_count, repo_count, languages)
     full_block = renderer.wrap_with_markers(block)
     pill_svg = renderer.render_oss_pill_svg(pr_count)
@@ -150,6 +178,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.pill_path is not None:
         pill_changed = write_text_file(args.pill_path, pill_svg)
         changed = changed or pill_changed
+    if args.assets_dir is not None:
+        changed = _write_star_badges(args.assets_dir, star_counts) or changed
     print("dashboard updated" if changed else "no changes")
     return 0
 

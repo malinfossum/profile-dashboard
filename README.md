@@ -9,6 +9,12 @@ A small Python tool that generates a live dashboard section inside my GitHub pro
   bytes written across all repos, and the last-updated date (UTC).
 - **Upstream contributions** — merged PRs authored in repos owned by others, grouped by repo,
   with a generated count pill (`--pill-path`).
+- **Star badges** — a small SVG badge next to any repo with at least one star, generated into
+  `--assets-dir`. One file per distinct count, so repos on the same count share a badge and an
+  unchanged count rewrites nothing. Badges no repo uses any more are deleted on the next run.
+  Self-hosted on purpose: no shields.io, no external request from the profile page. The SVG
+  carries transparent padding so the badge lands on the text's optical centre — see
+  `docs/design.md`.
 
 The output is written between two HTML comment markers in `malinfossum/README.md`. It only commits when the rendered block actually changes, so the profile repo stays quiet.
 
@@ -80,9 +86,10 @@ python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README
 
 Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group,
 `--exclude-owner OWNER` keeps an org's repos out of the upstream-contributions count,
-`--exclude-language LANGUAGE` keeps a language out of the stats pills, and
-`--language-count N` sets how many pills to show (default 3). All are repeatable
-except `--language-count`.
+`--exclude-language LANGUAGE` keeps a language out of the stats pills,
+`--language-count N` sets how many pills to show (default 3), and `--assets-dir DIR`
+is where the star badges are written. All are repeatable except `--language-count`
+and `--assets-dir`.
 
 A token is required for both. Set it locally as the env var `PROFILE_README_TOKEN` (do not commit it).
 

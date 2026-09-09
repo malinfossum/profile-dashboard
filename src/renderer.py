@@ -20,6 +20,32 @@ CONTRIB_GROUP = ("chip-purple", "For everyone", "Open source: showing up for the
 ASSETS_PREFIX = "assets"
 PRS_PER_REPO_LIMIT = 4
 
+# Star badge geometry. The badge is a miniature of the merged-PRs pill, so the
+# two read as one family. SVG has no shrink-to-fit, so the width is measured
+# from the label rather than set once.
+STAR_CAPSULE_HEIGHT = 18
+# HTML's legacy align="middle" centres an image on the text baseline - not on
+# the optical centre of the text, the way CSS vertical-align: middle would. That
+# left the capsule sitting 4px low. Transparent space below the capsule lifts it
+# by half the padding, so 8px lands it dead on. Measured against GitHub's own
+# rendered HTML, not estimated: see docs/design.md.
+STAR_BADGE_PAD_BOTTOM = 8
+STAR_BADGE_HEIGHT = STAR_CAPSULE_HEIGHT + STAR_BADGE_PAD_BOTTOM
+# Open space instead of a separator glyph. Consecutive plain spaces collapse in
+# HTML, so the air has to come from entities.
+GAP = "&ensp;&nbsp;"
+_STAR_TEXT_LEFT = 20
+_STAR_TEXT_RIGHT_PAD = 7
+# Per-glyph advance widths at 11px. A flat average leaves "62.2k" visibly
+# right-heavy, because the dot is half the width of a digit.
+_STAR_GLYPH_WIDTHS = {".": 3.1, "k": 5.8}
+_STAR_DIGIT_WIDTH = 6.2
+# Five-point star, centre (11, 9), outer radius 5, inner radius 2.2.
+_STAR_PATH = (
+    "M11 4 L12.29 7.22 L15.76 7.46 L13.09 9.68 L13.94 13.05 "
+    "L11 11.2 L8.06 13.05 L8.91 9.68 L6.24 7.46 L9.71 7.22 Z"
+)
+
 
 def short_description(text: str | None) -> str:
     """First sentence of a repo description, first letter lowercased.
@@ -51,13 +77,56 @@ def _dot_img() -> str:
     return f'<img src="{ASSETS_PREFIX}/dot-gold.svg" width="10" height="10" alt="·" />'
 
 
+def star_asset_name(stars: int) -> str:
+    """Filename for a star badge. Named by the label, so repos on the same
+    count share one file and an unchanged count rewrites nothing."""
+    return f"stars-{format_stars(stars)}.svg"
+
+
+def star_badge_width(label: str) -> int:
+    text = sum(_STAR_GLYPH_WIDTHS.get(char, _STAR_DIGIT_WIDTH) for char in label)
+    return round(_STAR_TEXT_LEFT + text + _STAR_TEXT_RIGHT_PAD)
+
+
+def render_star_badge_svg(stars: int) -> str:
+    """A self-hosted star badge in the profile palette. No third-party service."""
+    label = format_stars(stars)
+    width = star_badge_width(label)
+    noun = "star" if stars == 1 else "stars"
+    text_x = (_STAR_TEXT_LEFT + width - _STAR_TEXT_RIGHT_PAD) / 2
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {STAR_BADGE_HEIGHT}"
+     width="{width}" height="{STAR_BADGE_HEIGHT}" role="img" aria-label="{label} {noun}">
+  <rect x="0.5" y="0.5" width="{width - 1}" height="{STAR_CAPSULE_HEIGHT - 1}" rx="8.5"
+        fill="#14110d" stroke="#c9a96e" stroke-opacity="0.55" stroke-width="1"/>
+  <path d="{_STAR_PATH}" fill="#c9a96e"/>
+  <text x="{text_x:g}" y="13" text-anchor="middle" fill="#f0ebe4"
+        font-family="'Optima', 'Candara', 'Calibri', 'Segoe UI', system-ui, sans-serif"
+        font-size="11">{label}</text>
+</svg>
+"""
+
+
+def _star_badge_img(stars: int) -> str:
+    """The badge as an inline <img>, or an empty string for an unstarred repo."""
+    if stars < 1:
+        return ""
+    label = format_stars(stars)
+    noun = "star" if stars == 1 else "stars"
+    return (
+        f'<img src="{ASSETS_PREFIX}/{star_asset_name(stars)}" '
+        f'width="{star_badge_width(label)}" height="{STAR_BADGE_HEIGHT}" '
+        f'align="middle" alt="{label} {noun}" />'
+    )
+
+
 def _project_line(repo: dict) -> str:
     name = escape(repo.get("name") or "")
     url = repo.get("html_url", "")
     stars = repo.get("stargazers_count") or 0
-    star_part = f" ★ {stars}" if stars > 0 else ""
+    badge = _star_badge_img(stars)
+    star_part = f"{GAP}{badge}" if badge else ""
     about = escape(short_description(repo.get("description")))
-    return f'<a href="{url}"><strong>{name}</strong></a>{star_part}: {about}'
+    return f'<a href="{url}"><strong>{name}</strong></a>{star_part}{GAP}{about}'
 
 
 def _group_cell(chip: str, title: str, ethos: str) -> str:
@@ -83,10 +152,11 @@ def render_group_row(key: str, repos: list[dict]) -> str:
 def _contrib_repo_line(repo: dict) -> str:
     name = escape(repo["full_name"])
     stars = repo.get("stargazers_count") or 0
-    star_part = f" ★ {format_stars(stars)}" if stars > 0 else ""
+    badge = _star_badge_img(stars)
+    star_part = f"{GAP}{badge}" if badge else ""
     prs = sorted(repo["prs"], key=lambda p: p["number"])[:PRS_PER_REPO_LIMIT]
     links = " · ".join(f'<a href="{p["html_url"]}">#{p["number"]}</a>' for p in prs)
-    return f'<a href="{repo["html_url"]}"><strong>{name}</strong></a>{star_part}: {links}'
+    return f'<a href="{repo["html_url"]}"><strong>{name}</strong></a>{star_part}{GAP}{links}'
 
 
 def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
