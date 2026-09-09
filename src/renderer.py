@@ -34,17 +34,42 @@ STAR_BADGE_HEIGHT = STAR_CAPSULE_HEIGHT + STAR_BADGE_PAD_BOTTOM
 # Open space instead of a separator glyph. Consecutive plain spaces collapse in
 # HTML, so the air has to come from entities.
 GAP = "&ensp;&nbsp;"
-_STAR_TEXT_LEFT = 20
-_STAR_TEXT_RIGHT_PAD = 7
-# Per-glyph advance widths at 11px. A flat average leaves "62.2k" visibly
-# right-heavy, because the dot is half the width of a digit.
-_STAR_GLYPH_WIDTHS = {".": 3.1, "k": 5.8}
-_STAR_DIGIT_WIDTH = 6.2
-# Five-point star, centre (11, 9), outer radius 5, inner radius 2.2.
+# Advance widths at font-size 11, measured from the rendered font rather than
+# assumed - digits are not one width ("1" is 3.85, "0" is 6.04), and guessing a
+# flat average left the wide labels visibly lopsided.
+_GLYPH_ADVANCE = {
+    "0": 6.042,
+    "1": 3.846,
+    "2": 5.081,
+    "3": 5.344,
+    "4": 5.865,
+    "5": 5.403,
+    "6": 6.069,
+    "7": 5.199,
+    "8": 6.053,
+    "9": 6.032,
+    ".": 2.771,
+    "k": 5.371,
+}
+_FALLBACK_ADVANCE = 6.042
+
+# Five-point star. cy is 9.477, not 9, because the ink has to be centred and a
+# star's ink is not symmetric about its geometric centre - the single top point
+# reaches further than the two bottom ones. Centring the geometry left the star
+# sitting ~1px above the digits.
 _STAR_PATH = (
-    "M11 4 L12.29 7.22 L15.76 7.46 L13.09 9.68 L13.94 13.05 "
-    "L11 11.2 L8.06 13.05 L8.91 9.68 L6.24 7.46 L9.71 7.22 Z"
+    "M11.00 4.48 L12.29 7.70 L15.76 7.93 L13.09 10.16 L13.94 13.52 "
+    "L11.00 11.68 L8.06 13.52 L8.91 10.16 L6.24 7.93 L9.71 7.70 Z"
 )
+_STAR_INK_RIGHT = 15.76
+# Constant space between the star and the number, so every badge reads alike.
+_STAR_TEXT_GAP = 5.0
+_TEXT_X = _STAR_INK_RIGHT + _STAR_TEXT_GAP
+# Matches the star's left inset (6.24), so the pair sits centred.
+_PAD_RIGHT = 6.25
+# Digit cap ascent is 7.0 at font-size 11, so this baseline puts the cap centre
+# on y=9 - the capsule's centre line, and the star's ink centre.
+_TEXT_BASELINE = 12.5
 
 
 def short_description(text: str | None) -> str:
@@ -84,8 +109,19 @@ def star_asset_name(stars: int) -> str:
 
 
 def star_badge_width(label: str) -> int:
-    text = sum(_STAR_GLYPH_WIDTHS.get(char, _STAR_DIGIT_WIDTH) for char in label)
-    return round(_STAR_TEXT_LEFT + text + _STAR_TEXT_RIGHT_PAD)
+    advance = sum(_GLYPH_ADVANCE.get(char, _FALLBACK_ADVANCE) for char in label)
+    return round(_TEXT_X + advance + _PAD_RIGHT)
+
+
+def _text_length(label: str) -> float:
+    """Exact width the number is drawn at.
+
+    The advance table is one font's metrics, but the badge renders in whatever
+    font the reader has. Pinning textLength makes the geometry identical either
+    way: the star-to-number gap and the right padding stay constant, and only
+    sub-pixel glyph scaling absorbs the difference.
+    """
+    return round(star_badge_width(label) - _TEXT_X - _PAD_RIGHT, 2)
 
 
 def render_star_badge_svg(stars: int) -> str:
@@ -93,13 +129,13 @@ def render_star_badge_svg(stars: int) -> str:
     label = format_stars(stars)
     width = star_badge_width(label)
     noun = "star" if stars == 1 else "stars"
-    text_x = (_STAR_TEXT_LEFT + width - _STAR_TEXT_RIGHT_PAD) / 2
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {STAR_BADGE_HEIGHT}"
      width="{width}" height="{STAR_BADGE_HEIGHT}" role="img" aria-label="{label} {noun}">
   <rect x="0.5" y="0.5" width="{width - 1}" height="{STAR_CAPSULE_HEIGHT - 1}" rx="8.5"
         fill="#14110d" stroke="#c9a96e" stroke-opacity="0.55" stroke-width="1"/>
   <path d="{_STAR_PATH}" fill="#c9a96e"/>
-  <text x="{text_x:g}" y="13" text-anchor="middle" fill="#f0ebe4"
+  <text x="{_TEXT_X:g}" y="{_TEXT_BASELINE:g}" textLength="{_text_length(label):g}"
+        lengthAdjust="spacingAndGlyphs" fill="#f0ebe4"
         font-family="'Optima', 'Candara', 'Calibri', 'Segoe UI', system-ui, sans-serif"
         font-size="11">{label}</text>
 </svg>

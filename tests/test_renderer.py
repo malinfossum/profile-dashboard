@@ -81,11 +81,11 @@ class TestGroupRow:
             '<td valign="top" width="70%">\n\n'
             '<a href="https://github.com/malinfossum/tidsro"><strong>tidsro</strong></a>'
             "&ensp;&nbsp;"
-            '<img src="assets/stars-1.svg" width="33" height="26" align="middle" alt="1 star" />'
+            '<img src="assets/stars-1.svg" width="31" height="26" align="middle" alt="1 star" />'
             "&ensp;&nbsp;a calm desktop timer &amp; alarm.\n\n"
             '<a href="https://github.com/malinfossum/ignite"><strong>ignite</strong></a>'
             "&ensp;&nbsp;"
-            '<img src="assets/stars-1.svg" width="33" height="26" align="middle" alt="1 star" />'
+            '<img src="assets/stars-1.svg" width="31" height="26" align="middle" alt="1 star" />'
             "&ensp;&nbsp;ADHD-friendly task app.\n\n"
             "</td>\n"
             "</tr>"
@@ -108,7 +108,7 @@ class TestContribRow:
         assert (
             '<a href="https://github.com/ChrisTitusTech/winutil">'
             "<strong>ChrisTitusTech/winutil</strong></a>&ensp;&nbsp;"
-            '<img src="assets/stars-60.9k.svg" width="54" height="26" '
+            '<img src="assets/stars-60.9k.svg" width="53" height="26" '
             'align="middle" alt="60.9k stars" />&ensp;&nbsp;'
             '<a href="https://github.com/ChrisTitusTech/winutil/pull/4992">#4992</a> · '
             '<a href="https://github.com/ChrisTitusTech/winutil/pull/4993">#4993</a> · '
@@ -170,17 +170,17 @@ class TestStarBadge:
     def test_width_matches_the_img_tag(self):
         svg = renderer.render_star_badge_svg(60883)
         assert f'width="{renderer.star_badge_width("60.9k")}"' in svg
-        assert renderer.star_badge_width("60.9k") == 54
-        assert renderer.star_badge_width("1") == 33
+        assert renderer.star_badge_width("60.9k") == 53
+        assert renderer.star_badge_width("1") == 31
 
     def test_transparent_padding_lifts_the_capsule(self):
         # align="middle" centres the image on the baseline, so the capsule is
         # lifted by half the padding. Losing this silently drops it 4px.
         assert renderer.STAR_BADGE_HEIGHT == renderer.STAR_CAPSULE_HEIGHT + 8
         svg = renderer.render_star_badge_svg(1)
-        assert 'viewBox="0 0 33 26"' in svg
+        assert 'viewBox="0 0 31 26"' in svg
         assert 'height="17"' in svg  # capsule rect, inset by the 0.5 stroke
-        assert '<img src="assets/stars-1.svg" width="33" height="26" align="middle"' in (
+        assert '<img src="assets/stars-1.svg" width="31" height="26" align="middle"' in (
             renderer._star_badge_img(1)
         )
 
@@ -194,6 +194,56 @@ class TestStarBadge:
         row = renderer.render_group_row("focus", [TIDSRO])
         assert "shields.io" not in row
         assert 'src="assets/' in row
+
+
+class TestBadgeAlignment:
+    """Geometry the eye notices but the markup does not show."""
+
+    LABELS = ["1", "2", "999", "11.1k", "60.9k"]
+
+    @staticmethod
+    def _star_ink_bounds():
+        coords = [
+            tuple(float(n) for n in point.split())
+            for point in renderer._STAR_PATH.replace("M", "").replace("Z", "").split("L")
+            if point.strip()
+        ]
+        ys = [y for _, y in coords]
+        xs = [x for x, _ in coords]
+        return min(xs), max(xs), min(ys), max(ys)
+
+    def test_star_ink_is_centred_on_the_capsule(self):
+        # Not the star's geometric centre - its INK centre. A five-point star
+        # reaches further up than down, so centring the geometry sits it high.
+        _, _, top, bottom = self._star_ink_bounds()
+        assert round((top + bottom) / 2, 2) == 9.0
+
+    def test_digits_share_the_star_centre_line(self):
+        # Digit cap ascent is 7.0 at font-size 11, so the cap centre is
+        # baseline - 3.5. It has to land on the same y=9 as the star.
+        assert renderer._TEXT_BASELINE - 7.0 / 2 == 9.0
+
+    def test_star_to_number_gap_is_the_same_on_every_badge(self):
+        _, ink_right, _, _ = self._star_ink_bounds()
+        assert round(renderer._TEXT_X - ink_right, 2) == renderer._STAR_TEXT_GAP
+
+    def test_side_padding_matches_on_both_edges(self):
+        ink_left, _, _, _ = self._star_ink_bounds()
+        for label in self.LABELS:
+            right = renderer.star_badge_width(label) - renderer._TEXT_X
+            right -= renderer._text_length(label)
+            assert round(right, 2) == renderer._PAD_RIGHT, label
+        assert abs(ink_left - renderer._PAD_RIGHT) < 0.05
+
+    def test_text_length_is_pinned_so_fonts_cannot_shift_the_layout(self):
+        svg = renderer.render_star_badge_svg(1)
+        assert 'lengthAdjust="spacingAndGlyphs"' in svg
+        assert f'textLength="{renderer._text_length("1"):g}"' in svg
+
+    def test_narrow_and_wide_digits_do_not_share_a_width(self):
+        # "1" is 3.85 wide and "0" is 6.04. A flat average is what made the
+        # wide labels lopsided in the first place.
+        assert renderer.star_badge_width("1") < renderer.star_badge_width("8")
 
 
 class TestCompose:

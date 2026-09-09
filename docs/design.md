@@ -81,6 +81,28 @@ The 4px figure was measured, not estimated: the block was rendered through GitHu
 centre of the description text. Padding of 0/4/8/10/12 produced offsets of 4/2/0/-1/-2 px. The cost
 is about 4px of extra line height on rows that have a badge.
 
+### Why the star sits off-centre in the path data
+
+Inside the badge, the star and the number are aligned on one line at y=9, and getting there needed
+two corrections.
+
+The star's path is built around cy=9.477, not 9. A five-point star's *ink* is not symmetric about
+its geometric centre — the single top point reaches further than the two bottom ones — so centring
+the geometry left the star about 1px above the digits. The path is generated from the ink bounds
+instead.
+
+The number is drawn at baseline y=12.5 with `textLength` pinned and
+`lengthAdjust="spacingAndGlyphs"`. Digit cap ascent is 7.0 at font-size 11, so that baseline puts
+the cap centre on y=9 too. Pinning `textLength` matters because the badge renders in whatever font
+the reader has: without it, the star-to-number gap drifted with the label (4.69px on `999`, 7.90px
+on `11.1k`), since the text was centred inside a width that was only estimated. Advance widths are
+measured per glyph — digits are not one width, `1` is 3.85 and `0` is 6.04 — and a flat average was
+what made the wide labels lopsided.
+
+The result holds across every label: star ink centre and digit cap centre both at y=9, a constant
+5.0px gap between them, and 6.24px of padding on each side. `TestBadgeAlignment` pins all of it,
+because none of it is visible in the markup.
+
 ### Why there is no separator glyph
 
 Name, badge and description are separated by open space (`&ensp;&nbsp;`), not by punctuation. A
