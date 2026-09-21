@@ -156,13 +156,15 @@ def _star_badge_img(stars: int) -> str:
 
 
 def _project_line(repo: dict) -> str:
+    """Own repos carry no star badge: one or two stars is noise, not proof.
+
+    Upstream repos keep theirs (see _contrib_repo_line) because there the repo
+    is the subject and its star count says what scale the PR landed in.
+    """
     name = escape(repo.get("name") or "")
     url = repo.get("html_url", "")
-    stars = repo.get("stargazers_count") or 0
-    badge = _star_badge_img(stars)
-    star_part = f"{GAP}{badge}" if badge else ""
     about = escape(short_description(repo.get("description")))
-    return f'<a href="{url}"><strong>{name}</strong></a>{star_part}{GAP}{about}'
+    return f'<a href="{url}"><strong>{name}</strong></a>{GAP}{about}'
 
 
 def _group_cell(chip: str, title: str, ethos: str) -> str:
@@ -207,12 +209,11 @@ def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
     return f"<tr>\n{_group_cell(chip, title, ethos)}\n{_projects_cell(lines)}\n</tr>"
 
 
-def render_stats_line(repo_count: int, languages: list[str], generated_at: datetime) -> str:
-    lang_pills = " ".join(f"<code>{escape(lang)}</code>" for lang in languages)
+def render_stats_line(repo_count: int, generated_at: datetime) -> str:
     when = generated_at.strftime("%Y-%m-%d")
     return (
-        f'<p align="center"><code>{repo_count} original projects</code> {_dot_img()} '
-        f"{lang_pills} {_dot_img()} <code>updated {when}</code></p>"
+        f'<p align="center"><code>Selected from {repo_count} original projects</code> '
+        f"{_dot_img()} <code>updated {when}</code></p>"
     )
 
 
@@ -243,7 +244,6 @@ def compose(
     contrib_repos: list[dict],
     pr_count: int,
     repo_count: int,
-    languages: list[str],
     generated_at: datetime | None = None,
 ) -> str:
     """Build the full block (without markers) from prepared data.
@@ -256,7 +256,7 @@ def compose(
     if contrib_repos:
         rows.append(render_contrib_row(contrib_repos, pr_count))
     table = '<table align="center">\n' + "\n".join(rows) + "\n</table>"
-    return f"{table}\n\n{render_stats_line(repo_count, languages, when)}"
+    return f"{table}\n\n{render_stats_line(repo_count, when)}"
 
 
 def wrap_with_markers(block: str) -> str:

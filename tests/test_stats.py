@@ -1,5 +1,3 @@
-from collections import Counter
-
 from src import stats
 
 
@@ -35,44 +33,6 @@ class TestCountRepos:
 
     def test_counts(self):
         assert stats.count_repos([_repo(), _repo(), _repo()]) == 3
-
-
-class TestTotalLanguageBytes:
-    def test_sums_across_repos(self):
-        breakdowns = [{"C#": 100, "TypeScript": 30}, {"C#": 50, "JavaScript": 20}]
-        assert stats.total_language_bytes(breakdowns) == Counter(
-            {"C#": 150, "TypeScript": 30, "JavaScript": 20}
-        )
-
-    def test_ignores_repos_with_no_detected_language(self):
-        assert stats.total_language_bytes([{}, {"C#": 5}, {}]) == Counter({"C#": 5})
-
-    def test_excludes_named_languages_case_insensitively(self):
-        breakdowns = [{"C#": 100, "CSS": 90, "HTML": 80}]
-        assert stats.total_language_bytes(breakdowns, exclude=["css", "Html"]) == Counter(
-            {"C#": 100}
-        )
-
-    def test_empty_input(self):
-        assert stats.total_language_bytes([]) == Counter()
-
-
-class TestTopLanguages:
-    def test_ranks_by_bytes_descending(self):
-        counts = Counter({"C#": 300, "JavaScript": 200, "TypeScript": 100})
-        assert stats.top_languages(counts) == ["C#", "JavaScript", "TypeScript"]
-
-    def test_breaks_byte_ties_alphabetically(self):
-        """Equal byte counts must not depend on dict order, or the pill flip-flops."""
-        counts = Counter({"Python": 10, "CSS": 10, "HTML": 10})
-        assert stats.top_languages(counts) == ["CSS", "HTML", "Python"]
-
-    def test_respects_n_argument(self):
-        counts = Counter({"A": 4, "B": 3, "C": 2, "D": 1})
-        assert stats.top_languages(counts, n=2) == ["A", "B"]
-
-    def test_empty_counts(self):
-        assert stats.top_languages(Counter()) == []
 
 
 class TestMostRecentFirst:

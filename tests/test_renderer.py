@@ -80,22 +80,19 @@ class TestGroupRow:
             "</td>\n"
             '<td valign="top" width="70%">\n\n'
             '<a href="https://github.com/malinfossum/tidsro"><strong>tidsro</strong></a>'
-            "&ensp;&nbsp;"
-            '<img src="assets/stars-1.svg" width="31" height="26" align="middle" alt="1 star" />'
             "&ensp;&nbsp;a calm desktop timer &amp; alarm.\n\n"
             '<a href="https://github.com/malinfossum/ignite"><strong>ignite</strong></a>'
-            "&ensp;&nbsp;"
-            '<img src="assets/stars-1.svg" width="31" height="26" align="middle" alt="1 star" />'
             "&ensp;&nbsp;ADHD-friendly task app.\n\n"
             "</td>\n"
             "</tr>"
         )
         assert row == expected
 
-    def test_zero_stars_omits_badge(self):
-        row = renderer.render_group_row("wellbeing", [VARDE])
-        assert "varde</strong></a>&ensp;&nbsp;a bilingual" in row
-        assert "stars-0.svg" not in row
+    def test_own_repos_never_carry_a_badge(self):
+        # One or two stars on my own repo is noise, not proof. Upstream rows keep theirs.
+        row = renderer.render_group_row("focus", [TIDSRO])
+        assert "tidsro</strong></a>&ensp;&nbsp;a calm desktop" in row
+        assert "stars-" not in row
 
 
 class TestContribRow:
@@ -128,13 +125,9 @@ class TestContribRow:
 
 class TestStatsLine:
     def test_exact_line(self):
-        line = renderer.render_stats_line(
-            13, ["C#", "JavaScript", "CSS"], datetime(2026, 8, 20, tzinfo=UTC)
-        )
+        line = renderer.render_stats_line(13, datetime(2026, 8, 20, tzinfo=UTC))
         expected = (
-            '<p align="center"><code>13 original projects</code> '
-            '<img src="assets/dot-gold.svg" width="10" height="10" alt="·" /> '
-            "<code>C#</code> <code>JavaScript</code> <code>CSS</code> "
+            '<p align="center"><code>Selected from 13 original projects</code> '
             '<img src="assets/dot-gold.svg" width="10" height="10" alt="·" /> '
             "<code>updated 2026-08-20</code></p>"
         )
@@ -185,13 +178,13 @@ class TestStarBadge:
         )
 
     def test_no_separator_glyph(self):
-        row = renderer.render_group_row("focus", [TIDSRO])
+        row = renderer.render_contrib_row([WINUTIL], 3)
         assert renderer.GAP in row
         for dash in ("\u2014", "\u2013", ":"):
             assert f"</a>{dash}" not in row and f"/>{dash}" not in row
 
     def test_no_third_party_host(self):
-        row = renderer.render_group_row("focus", [TIDSRO])
+        row = renderer.render_contrib_row([WINUTIL], 3)
         assert "shields.io" not in row
         assert 'src="assets/' in row
 
@@ -253,7 +246,6 @@ class TestCompose:
             [WINUTIL],
             3,
             13,
-            ["C#", "JavaScript", "CSS"],
             datetime(2026, 8, 20, tzinfo=UTC),
         )
         assert block.startswith('<table align="center">\n<tr>\n')
@@ -265,7 +257,7 @@ class TestCompose:
 
     def test_no_contributions_omits_contrib_row(self):
         block = renderer.compose(
-            [("focus", [TIDSRO])], [], 0, 13, ["C#"], datetime(2026, 8, 20, tzinfo=UTC)
+            [("focus", [TIDSRO])], [], 0, 13, datetime(2026, 8, 20, tzinfo=UTC)
         )
         assert "For everyone" not in block
         assert "oss-merged" not in block
