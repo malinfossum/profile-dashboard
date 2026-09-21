@@ -5,11 +5,12 @@ A small Python tool that generates a live dashboard section inside my GitHub pro
 ## What it shows
 
 - **Featured projects** — repos I tag with the `featured` topic, plus any passed via `--feature-repo` (e.g. a collaboration in another org), sorted by last-pushed.
-- **Stats** — count of original projects (forks and archived repos excluded), top languages by
-  bytes written across all repos, and the last-updated date (UTC).
+- **Stats** — count of original projects (forks and archived repos excluded) and the
+  last-updated date (UTC).
 - **Upstream contributions** — merged PRs authored in repos owned by others, grouped by repo,
   with a generated count pill (`--pill-path`).
-- **Star badges** — a small SVG badge next to any repo with at least one star, generated into
+- **Star badges** — a small SVG badge next to each upstream repo with at least one star (own
+  repos carry none), generated into
   `--assets-dir`. One file per distinct count, so repos on the same count share a badge and an
   unchanged count rewrites nothing. Badges no repo uses any more are deleted on the next run.
   Self-hosted on purpose: no shields.io, no external request from the profile page. The SVG
@@ -33,7 +34,7 @@ Five files, each with one job:
 | File | Responsibility |
 |---|---|
 | `src/github_client.py` | Talks to the GitHub API. Returns plain dicts. |
-| `src/stats.py` | Pure aggregation. Counts repos, sums language bytes and ranks them, groups featured repos. Filters forks and archived repos. |
+| `src/stats.py` | Pure aggregation. Counts repos, groups featured repos. Filters forks and archived repos. |
 | `src/renderer.py` | Composes Markdown sections. Escapes user-supplied strings. |
 | `src/readme_writer.py` | Replaces content between markers in the target README. Idempotent. |
 | `src/main.py` | Top-down orchestrator. Wires everything together. |
@@ -86,10 +87,8 @@ python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README
 
 Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group,
 `--exclude-owner OWNER` keeps an org's repos out of the upstream-contributions count,
-`--exclude-language LANGUAGE` keeps a language out of the stats pills,
-`--language-count N` sets how many pills to show (default 3), and `--assets-dir DIR`
-is where the star badges are written. All are repeatable except `--language-count`
-and `--assets-dir`.
+and `--assets-dir DIR` is where the star badges are written. All are repeatable except
+`--assets-dir`.
 
 A token is required for both. Set it locally as the env var `PROFILE_README_TOKEN` (do not commit it).
 
