@@ -1,4 +1,4 @@
-# profile-dashboard
+# Profile dashboard
 
 A small Python tool that generates a live dashboard section inside my GitHub profile README. Runs daily on GitHub Actions.
 
