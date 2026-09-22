@@ -85,7 +85,8 @@ python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README
   --feature-repo wendhq/wend
 ```
 
-Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group,
+Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group
+(keys: `play`, `focus`, `wellbeing`, `momentum` — row order follows the order the flags are given),
 `--exclude-owner OWNER` keeps an org's repos out of the upstream-contributions count,
 and `--assets-dir DIR` is where the star badges are written. All are repeatable except
 `--assets-dir`.
