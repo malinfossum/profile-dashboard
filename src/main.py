@@ -39,7 +39,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="append",
         metavar="KEY=NAME,NAME",
         help="Assign featured repos to a purpose group (repeatable, ordered), "
-        "e.g. focus=tidsro,ignite. Keys: focus, wellbeing, momentum.",
+        "e.g. focus=tidsro,ignite. Keys: focus, wellbeing, momentum, play.",
     )
     parser.add_argument(
         "--exclude-owner",

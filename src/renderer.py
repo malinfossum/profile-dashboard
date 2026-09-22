@@ -14,6 +14,7 @@ GROUPS = {
     "focus": ("chip-gold", "For focus", "Calm tools, built for brains like mine."),
     "wellbeing": ("chip-terracotta", "For wellbeing", "Making life a little easier."),
     "momentum": ("chip-teal", "For momentum", "Keeping the work visible and moving."),
+    "play": ("chip-blue", "For play", "Games and music, taken seriously."),
 }
 CONTRIB_GROUP = ("chip-purple", "For everyone", "Open source: showing up for the tools we share.")
 
