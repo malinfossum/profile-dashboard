@@ -4,17 +4,17 @@ A small Python tool that generates a live dashboard section inside my GitHub pro
 
 ## What it shows
 
-- **Featured projects** — repos I tag with the `featured` topic, plus any passed via `--feature-repo` (e.g. a collaboration in another org), sorted by last-pushed.
-- **Stats** — count of original projects (forks and archived repos excluded) and the
+- **Featured projects**: repos I tag with the `featured` topic, plus any passed via `--feature-repo` (e.g. a collaboration in another org), sorted by last-pushed.
+- **Stats**: count of original projects (forks and archived repos excluded) and the
   last-updated date (UTC).
-- **Upstream contributions** — merged PRs authored in repos owned by others, grouped by repo,
+- **Upstream contributions**: merged PRs authored in repos owned by others, grouped by repo,
   with a generated count pill (`--pill-path`).
-- **Star badges** — a small SVG badge next to each upstream repo with at least one star (own
+- **Star badges**: a small SVG badge next to each upstream repo with at least one star (own
   repos carry none), generated into
   `--assets-dir`. One file per distinct count, so repos on the same count share a badge and an
   unchanged count rewrites nothing. Badges no repo uses any more are deleted on the next run.
   Self-hosted on purpose: no shields.io, no external request from the profile page. The SVG
-  carries transparent padding so the badge lands on the text's optical centre — see
+  carries transparent padding so the badge lands on the text's optical centre. See
   `docs/design.md`.
 
 The output is written between two HTML comment markers in `malinfossum/README.md`. It only commits when the rendered block actually changes, so the profile repo stays quiet.
@@ -22,10 +22,10 @@ The output is written between two HTML comment markers in `malinfossum/README.md
 ## Stack
 
 - Python 3.12+
-- `requests` — HTTP only
-- `pytest` — tests
-- `ruff` — lint + format
-- GitHub Actions — daily cron
+- `requests`: HTTP only
+- `pytest`: tests
+- `ruff`: lint + format
+- GitHub Actions: daily cron
 
 ## Architecture
 
@@ -74,7 +74,7 @@ pip install -e ".[dev]"
 ### Run
 
 ```bash
-# Dry run — prints the generated block, writes nothing
+# Dry run: prints the generated block, writes nothing
 python -m src.main --repo malinfossum/malinfossum --dry-run
 
 # Real run against a local README
@@ -86,7 +86,7 @@ python -m src.main --repo malinfossum/malinfossum --readme-path ./path/to/README
 ```
 
 Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group
-(keys: `play`, `focus`, `wellbeing`, `momentum` — row order follows the order the flags are given),
+(keys: `play`, `focus`, `wellbeing`, `momentum`; row order follows the order the flags are given),
 `--exclude-owner OWNER` keeps an org's repos out of the upstream-contributions count,
 and `--assets-dir DIR` is where the star badges are written. All are repeatable except
 `--assets-dir`.
@@ -110,4 +110,4 @@ pytest
 
 ## License
 
-Apache 2.0 — see [LICENSE](LICENSE).
+Apache 2.0. See [LICENSE](LICENSE).
