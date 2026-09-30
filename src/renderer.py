@@ -19,7 +19,6 @@ GROUPS = {
 CONTRIB_GROUP = ("chip-purple", "For everyone", "Open source: showing up for the tools we share.")
 
 ASSETS_PREFIX = "assets"
-PRS_PER_REPO_LIMIT = 4
 
 # Star badge geometry. The badge is a miniature of the merged-PRs pill, so the
 # two read as one family. SVG has no shrink-to-fit, so the width is measured
@@ -193,7 +192,7 @@ def _contrib_repo_line(repo: dict) -> str:
     stars = repo.get("stargazers_count") or 0
     badge = _star_badge_img(stars)
     star_part = f"{GAP}{badge}" if badge else ""
-    prs = sorted(repo["prs"], key=lambda p: p["number"])[:PRS_PER_REPO_LIMIT]
+    prs = sorted(repo["prs"], key=lambda p: p["number"])
     links = " · ".join(f'<a href="{p["html_url"]}">#{p["number"]}</a>' for p in prs)
     return f'<a href="{repo["html_url"]}"><strong>{name}</strong></a>{star_part}{GAP}{links}'
 
