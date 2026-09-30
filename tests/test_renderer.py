@@ -115,12 +115,11 @@ class TestContribRow:
         assert "<em>Open source: showing up for the tools we share.</em>" in row
         assert 'upstream" />\n\n<br/>\n\n<a href=' in row
 
-    def test_pr_limit_keeps_lowest_numbers(self):
+    def test_every_pr_listed_in_number_order(self):
         many = dict(WINUTIL, prs=[{"number": n, "html_url": f"u{n}"} for n in [9, 5, 7, 1, 3]])
         row = renderer.render_contrib_row([many], 5)
-        assert "#1" in row
-        assert "#7" in row
-        assert "#9" not in row
+        positions = [row.index(f"#{n}<") for n in [1, 3, 5, 7, 9]]
+        assert positions == sorted(positions)
 
 
 class TestStatsLine:
