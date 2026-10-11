@@ -88,6 +88,12 @@ class TestGroupRow:
         )
         assert row == expected
 
+    def test_love_group_has_red_chip_and_ethos(self):
+        row = renderer.render_group_row("love", [TIDSRO])
+        assert '<img src="assets/chip-red.svg" width="14" height="14" alt="" /> ' in row
+        assert "<strong>For love</strong>" in row
+        assert "<em>Small things, made with love.</em>" in row
+
     def test_own_repos_never_carry_a_badge(self):
         # One or two stars on my own repo is noise, not proof. Upstream rows keep theirs.
         row = renderer.render_group_row("focus", [TIDSRO])
