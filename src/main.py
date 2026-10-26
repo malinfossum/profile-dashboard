@@ -140,7 +140,11 @@ def main(argv: list[str] | None = None) -> int:
     # the pruning in _write_star_badges then drops the old own-repo files.
     star_counts = {r["stargazers_count"] for r in contrib_repos if r["stargazers_count"] > 0}
 
-    block = renderer.compose(grouped, contrib_repos, pr_count, repo_count)
+    try:
+        block = renderer.compose(grouped, contrib_repos, pr_count, repo_count)
+    except renderer.LineTooLongError as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 1
     full_block = renderer.wrap_with_markers(block)
     pill_svg = renderer.render_oss_pill_svg(pr_count)
 

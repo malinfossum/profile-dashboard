@@ -21,6 +21,13 @@ CONTRIB_GROUP = ("chip-purple", "For everyone", "Open source: showing up for the
 
 ASSETS_PREFIX = "assets"
 
+# One project line never wraps on the desktop profile page. The projects cell is
+# 565px wide at 14px, and the widest one-line row measured 6.74px per character
+# with the bold name included, so 72 characters leave 80px of slack. Measured
+# on the rendered page, not estimated. The count covers the repo name, the gap
+# and the first sentence of the description, full stop included.
+MAX_LINE_CHARS = 72
+
 # Star badge geometry. The badge is a miniature of the merged-PRs pill, so the
 # two read as one family. SVG has no shrink-to-fit, so the width is measured
 # from the label rather than set once.
@@ -71,6 +78,10 @@ _PAD_RIGHT = 6.25
 # Digit cap ascent is 7.0 at font-size 11, so this baseline puts the cap centre
 # on y=9 - the capsule's centre line, and the star's ink centre.
 _TEXT_BASELINE = 12.5
+
+
+class LineTooLongError(ValueError):
+    """A project line would wrap on the desktop profile page."""
 
 
 def short_description(text: str | None) -> str:
@@ -162,10 +173,18 @@ def _project_line(repo: dict) -> str:
     Upstream repos keep theirs (see _contrib_repo_line) because there the repo
     is the subject and its star count says what scale the PR landed in.
     """
-    name = escape(repo.get("name") or "")
+    name = repo.get("name") or ""
     url = repo.get("html_url", "")
-    about = escape(short_description(repo.get("description")))
-    return f'<a href="{url}"><strong>{name}</strong></a>{GAP}{about}'
+    about = short_description(repo.get("description"))
+    # Two characters for the gap: an en space plus a non-breaking space.
+    length = len(name) + 2 + len(about)
+    if length > MAX_LINE_CHARS:
+        raise LineTooLongError(
+            f"'{name}' renders as {length} characters; the one-line budget is "
+            f"{MAX_LINE_CHARS}. Shorten the first sentence of its GitHub "
+            f"description by {length - MAX_LINE_CHARS}."
+        )
+    return f'<a href="{url}"><strong>{escape(name)}</strong></a>{GAP}{escape(about)}'
 
 
 def _group_cell(chip: str, title: str, ethos: str) -> str:

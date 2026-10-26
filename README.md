@@ -91,6 +91,12 @@ Other flags: `--group KEY=NAME,NAME` assigns featured repos to a purpose group
 and `--assets-dir DIR` is where the star badges are written. All are repeatable except
 `--assets-dir`.
 
+Every project line has to fit on one line of the desktop profile page: the repo name plus
+the first sentence of its GitHub description, 72 characters at most together. A longer
+description fails the run and says how many characters to cut, so the README is never
+rewritten with a wrapping line. Only the first sentence is shown; the rest of the
+description can be as long as it likes.
+
 A token is required for both. Set it locally as the env var `PROFILE_README_TOKEN` (do not commit it).
 
 ### Tests and lint
