@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+import pytest
+
 from src import renderer
 
 TIDSRO = {
@@ -66,6 +68,33 @@ class TestFormatStars:
 
     def test_trailing_zero_stripped(self):
         assert renderer.format_stars(60000) == "60k"
+
+
+class TestOneLineBudget:
+    # The budget is the whole line as the reader sees it: name, gap, sentence.
+    def test_line_at_the_budget_renders(self):
+        about = "GTA VI companion: a countdown, a tracker and what is confirmed."
+        repo = {"name": "rookdex", "html_url": "", "description": about + " Free, no account."}
+        assert len("rookdex") + 2 + len(about) == renderer.MAX_LINE_CHARS
+        assert about in renderer.render_group_row("play", [repo])
+
+    def test_line_over_the_budget_fails_with_the_cut_to_make(self):
+        about = (
+            "GTA VI companion: a countdown, a tracker and a straight answer "
+            "on what is actually confirmed."
+        )
+        repo = {"name": "rookdex", "html_url": "", "description": about}
+        with pytest.raises(renderer.LineTooLongError) as caught:
+            renderer.render_group_row("play", [repo])
+        message = str(caught.value)
+        assert "'rookdex'" in message
+        assert "102 characters" in message
+        assert "by 30" in message
+
+    def test_only_the_first_sentence_counts(self):
+        tail = " " + "x" * 200 + "."
+        repo = {"name": "ignite", "html_url": "", "description": "ADHD-friendly task app." + tail}
+        assert "ADHD-friendly task app." in renderer.render_group_row("focus", [repo])
 
 
 class TestGroupRow:
