@@ -14,8 +14,6 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    cooldown:
-      semver-major-days: 21
     open-pull-requests-limit: 5
     groups:
       ward:
