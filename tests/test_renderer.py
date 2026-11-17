@@ -102,7 +102,7 @@ class TestGroupRow:
         row = renderer.render_group_row("focus", [TIDSRO, IGNITE])
         expected = (
             "<tr>\n"
-            '<td valign="middle" width="30%">\n\n'
+            '<td valign="top" width="30%">\n\n'
             '<img src="assets/chip-gold.svg" width="14" height="14" alt="" /> '
             "<strong>For focus</strong>\n\n"
             "<em>Calm tools, built for brains like mine.</em>\n\n"
@@ -134,8 +134,8 @@ class TestContribRow:
     def test_pill_and_ascending_pr_links(self):
         row = renderer.render_contrib_row([WINUTIL], 3)
         assert (
-            '<img src="assets/oss-merged.svg" width="250" height="36" '
-            'alt="3 pull requests merged upstream" />' in row
+            '<p><img src="assets/oss-merged.svg" width="250" height="48" '
+            'alt="3 pull requests merged upstream" /></p>' in row
         )
         assert (
             '<a href="https://github.com/ChrisTitusTech/winutil">'
@@ -148,7 +148,14 @@ class TestContribRow:
         )
         assert "<strong>For everyone</strong>" in row
         assert "<em>Open source: showing up for the tools we share.</em>" in row
-        assert 'upstream" />\n\n<br/>\n\n<a href=' in row
+        # A <p> of its own: a bare <img> line is a raw HTML block with no margin.
+        assert 'upstream" /></p>\n\n<a href=' in row
+        assert "<br/>" not in row
+
+    def test_group_title_sits_at_the_top_of_its_row(self):
+        row = renderer.render_contrib_row([WINUTIL], 3)
+        assert '<td valign="top" width="30%">' in row
+        assert 'valign="middle"' not in row
 
     def test_every_pr_listed_in_number_order(self):
         many = dict(WINUTIL, prs=[{"number": n, "html_url": f"u{n}"} for n in [9, 5, 7, 1, 3]])
@@ -178,6 +185,14 @@ class TestOssPill:
         svg = renderer.render_oss_pill_svg(1)
         assert 'aria-label="1 pull request merged upstream"' in svg
         assert ">1 PR MERGED UPSTREAM<" in svg
+
+    def test_transparent_space_below_the_pill(self):
+        # GitHub strips CSS, so the gap above the first repo line is baked into the SVG:
+        # a 36 px pill on a 48 px canvas, the bottom 12 px left empty.
+        svg = renderer.render_oss_pill_svg(3)
+        assert 'viewBox="0 0 250 48"' in svg
+        assert 'width="250" height="48"' in svg
+        assert 'height="35" rx="17.5"' in svg
 
 
 class TestStarBadge:

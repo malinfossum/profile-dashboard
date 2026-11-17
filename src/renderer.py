@@ -189,7 +189,7 @@ def _project_line(repo: dict) -> str:
 
 def _group_cell(chip: str, title: str, ethos: str) -> str:
     return (
-        f'<td valign="middle" width="30%">\n\n'
+        f'<td valign="top" width="30%">\n\n'
         f"{_chip_img(chip)} <strong>{title}</strong>\n\n"
         f"<em>{ethos}</em>\n\n"
         f"</td>"
@@ -220,12 +220,13 @@ def _contrib_repo_line(repo: dict) -> str:
 def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
     chip, title, ethos = CONTRIB_GROUP
     noun = "pull request" if pr_count == 1 else "pull requests"
+    # A bare <img> line is a raw HTML block with no margin, so the pill gets a <p> of
+    # its own. The rest of the gap above the first repo line is baked into the SVG.
     pill = (
-        f'<img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="36" '
-        f'alt="{pr_count} {noun} merged upstream" />'
+        f'<p><img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="{_PILL_CANVAS}" '
+        f'alt="{pr_count} {noun} merged upstream" /></p>'
     )
-    # The <br/> paragraph gives the pill breathing room above the repo lines.
-    lines = [pill, "<br/>"] + [_contrib_repo_line(r) for r in contrib_repos]
+    lines = [pill] + [_contrib_repo_line(r) for r in contrib_repos]
     return f"<tr>\n{_group_cell(chip, title, ethos)}\n{_projects_cell(lines)}\n</tr>"
 
 
@@ -237,11 +238,18 @@ def render_stats_line(repo_count: int, generated_at: datetime) -> str:
     )
 
 
+# The pill is 36 px tall on a 48 px canvas. GitHub strips CSS, so the empty 12 px
+# under it is what keeps the first repo line from crowding the pill.
+_PILL_CANVAS = 48
+
+
 def render_oss_pill_svg(pr_count: int) -> str:
     """The self-hosted merged-PRs pill, regenerated so the count stays current."""
     noun = "pull request" if pr_count == 1 else "pull requests"
     label = f"{pr_count} PRs MERGED UPSTREAM" if pr_count != 1 else "1 PR MERGED UPSTREAM"
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 36" width="250" height="36"
+    h = _PILL_CANVAS
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 {h}"
+     width="250" height="{h}"
      role="img" aria-label="{pr_count} {noun} merged upstream">
   <defs>
     <radialGradient id="bg" cx="50%" cy="50%" r="90%">
