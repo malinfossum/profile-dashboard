@@ -39,6 +39,12 @@ STAR_CAPSULE_HEIGHT = 18
 # rendered HTML, not estimated: see docs/design.md.
 STAR_BADGE_PAD_BOTTOM = 8
 STAR_BADGE_HEIGHT = STAR_CAPSULE_HEIGHT + STAR_BADGE_PAD_BOTTOM
+# Merged-PRs pill geometry. GitHub strips CSS, so the gap between the pill and
+# the first repo line is transparent space at the bottom of the SVG: 34px on the
+# live page, a little more than the 26px between repo lines.
+PILL_HEIGHT = 36
+PILL_PAD_BOTTOM = 12
+PILL_CANVAS_HEIGHT = PILL_HEIGHT + PILL_PAD_BOTTOM
 # Open space instead of a separator glyph. Consecutive plain spaces collapse in
 # HTML, so the air has to come from entities.
 GAP = "&ensp;&nbsp;"
@@ -223,7 +229,7 @@ def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
     # A bare <img> line is a raw HTML block with no margin, so the pill gets a <p> of
     # its own. The rest of the gap above the first repo line is baked into the SVG.
     pill = (
-        f'<p><img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="{_PILL_CANVAS}" '
+        f'<p><img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="{PILL_CANVAS_HEIGHT}" '
         f'alt="{pr_count} {noun} merged upstream" /></p>'
     )
     lines = [pill] + [_contrib_repo_line(r) for r in contrib_repos]
@@ -238,16 +244,11 @@ def render_stats_line(repo_count: int, generated_at: datetime) -> str:
     )
 
 
-# The pill is 36 px tall on a 48 px canvas. GitHub strips CSS, so the empty 12 px
-# under it is what keeps the first repo line from crowding the pill.
-_PILL_CANVAS = 48
-
-
 def render_oss_pill_svg(pr_count: int) -> str:
     """The self-hosted merged-PRs pill, regenerated so the count stays current."""
     noun = "pull request" if pr_count == 1 else "pull requests"
     label = f"{pr_count} PRs MERGED UPSTREAM" if pr_count != 1 else "1 PR MERGED UPSTREAM"
-    h = _PILL_CANVAS
+    h = PILL_CANVAS_HEIGHT
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 {h}"
      width="250" height="{h}"
      role="img" aria-label="{pr_count} {noun} merged upstream">
