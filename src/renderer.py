@@ -39,6 +39,12 @@ STAR_CAPSULE_HEIGHT = 18
 # rendered HTML, not estimated: see docs/design.md.
 STAR_BADGE_PAD_BOTTOM = 8
 STAR_BADGE_HEIGHT = STAR_CAPSULE_HEIGHT + STAR_BADGE_PAD_BOTTOM
+# Merged-PRs pill geometry. GitHub strips CSS, so the gap between the pill and
+# the first repo line is transparent space at the bottom of the SVG: 34px on the
+# live page, a little more than the 26px between repo lines.
+PILL_HEIGHT = 36
+PILL_PAD_BOTTOM = 12
+PILL_CANVAS_HEIGHT = PILL_HEIGHT + PILL_PAD_BOTTOM
 # Open space instead of a separator glyph. Consecutive plain spaces collapse in
 # HTML, so the air has to come from entities.
 GAP = "&ensp;&nbsp;"
@@ -189,7 +195,7 @@ def _project_line(repo: dict) -> str:
 
 def _group_cell(chip: str, title: str, ethos: str) -> str:
     return (
-        f'<td valign="middle" width="30%">\n\n'
+        f'<td valign="top" width="30%">\n\n'
         f"{_chip_img(chip)} <strong>{title}</strong>\n\n"
         f"<em>{ethos}</em>\n\n"
         f"</td>"
@@ -220,12 +226,13 @@ def _contrib_repo_line(repo: dict) -> str:
 def render_contrib_row(contrib_repos: list[dict], pr_count: int) -> str:
     chip, title, ethos = CONTRIB_GROUP
     noun = "pull request" if pr_count == 1 else "pull requests"
+    # A bare <img> line is a raw HTML block with no margin, so the pill gets a <p> of
+    # its own. The rest of the gap above the first repo line is baked into the SVG.
     pill = (
-        f'<img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="36" '
-        f'alt="{pr_count} {noun} merged upstream" />'
+        f'<p><img src="{ASSETS_PREFIX}/oss-merged.svg" width="250" height="{PILL_CANVAS_HEIGHT}" '
+        f'alt="{pr_count} {noun} merged upstream" /></p>'
     )
-    # The <br/> paragraph gives the pill breathing room above the repo lines.
-    lines = [pill, "<br/>"] + [_contrib_repo_line(r) for r in contrib_repos]
+    lines = [pill] + [_contrib_repo_line(r) for r in contrib_repos]
     return f"<tr>\n{_group_cell(chip, title, ethos)}\n{_projects_cell(lines)}\n</tr>"
 
 
@@ -241,7 +248,9 @@ def render_oss_pill_svg(pr_count: int) -> str:
     """The self-hosted merged-PRs pill, regenerated so the count stays current."""
     noun = "pull request" if pr_count == 1 else "pull requests"
     label = f"{pr_count} PRs MERGED UPSTREAM" if pr_count != 1 else "1 PR MERGED UPSTREAM"
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 36" width="250" height="36"
+    h = PILL_CANVAS_HEIGHT
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 {h}"
+     width="250" height="{h}"
      role="img" aria-label="{pr_count} {noun} merged upstream">
   <defs>
     <radialGradient id="bg" cx="50%" cy="50%" r="90%">
